@@ -2,13 +2,17 @@
 
 package cli
 
-import core.*
+import core.IConverter
+import core.initKStruct
+import core.util.IDTO
+import core.util.IModel
 
-fun main(vararg args: String) {
-    val person = Person("Markus")
-    val dto = KStruct.convertModelToDTO<Person, PersonDTO>(person)
-    println(dto)
+fun main() {
+    val person = PersonService(PersonRepositoryImpl())
+    val getPerson = person.getPerson()
 
+    val person2 = converter.convert(getPerson)
+    println(person2)
 }
 
 data class Person(
@@ -19,14 +23,8 @@ data class PersonDTO(
     val name: String
 ) : IDTO
 
-class PersonConverter : IConverter<Person, PersonDTO> {
-    override fun convertModelToDTO(model: Person): PersonDTO {
-        return PersonDTO(name = model.name)
-    }
-}
-
-val converters = converters {
-    add(PersonConverter())
+val converter = initKStruct {
+    add(PersonMapperImpl())
 }
 
 

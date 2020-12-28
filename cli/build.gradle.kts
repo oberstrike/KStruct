@@ -8,6 +8,13 @@ application {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation(project(":core"))
+    kapt(project(":core"))
+
+    implementation(kotlin("stdlib"))
+    implementation("org.mapstruct:mapstruct:1.4.1.Final")
+    kapt("org.mapstruct:mapstruct-processor:1.4.1.Final")
+
+
+
 }
