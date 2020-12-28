@@ -1,6 +1,6 @@
 plugins {
-    base
-    kotlin("jvm") version "1.3.70" apply false
+    kotlin("jvm") version "1.4.10" apply false
+    kotlin("kapt") version "1.4.10" apply false
 }
 
 allprojects {
@@ -14,9 +14,3 @@ allprojects {
     }
 }
 
-dependencies {
-    // Make the root project archives configuration depend on every subproject
-    subprojects.forEach {
-        archives(it)
-    }
-}
