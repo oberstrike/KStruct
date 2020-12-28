@@ -8,6 +8,6 @@ application {
 }
 
 dependencies {
-    compile(project(":core"))
-    compile(kotlin("stdlib"))
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation(project(":core"))
 }
