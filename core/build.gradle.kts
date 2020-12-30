@@ -26,7 +26,3 @@ dependencies {
     implementation("com.github.tschuchortdev:kotlin-compile-testing:1.3.1")
 
 }
-
-kapt{
-
-}

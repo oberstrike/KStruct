@@ -1,4 +1,4 @@
-package core.codegen
+package codegen
 
 import com.google.auto.service.AutoService
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector

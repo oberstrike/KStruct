@@ -1,7 +1,7 @@
 package cli
 
+import codegen.Converter
 import core.IConverter
-import core.codegen.Converter
 import org.mapstruct.Mapper
 
 @Mapper

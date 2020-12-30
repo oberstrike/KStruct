@@ -1,4 +1,4 @@
-package core.codegen
+package codegen
 
 import com.squareup.kotlinpoet.INT
 import com.squareup.kotlinpoet.LIST

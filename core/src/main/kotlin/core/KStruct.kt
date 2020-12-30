@@ -21,14 +21,6 @@ class Converter {
     }
 }
 
-fun <T : IModel, U : IDTO> convert(target: IConvertable): IConvertable {
-    if (target is IModel)
-        return KStruct.convertModelToDTO<T, U>(target as T)
-    if (target is IDTO)
-        return KStruct.convertDTOToModel<T, U>(target as U)
-    throw Exception("There was an error while converting: ${target::class}")
-}
-
 @Suppress("UNCHECKED_CAST")
 object KStruct {
 
@@ -46,28 +38,28 @@ object KStruct {
         pConverters.add(converterWrapper)
     }
 
-    private fun <T : IModel, U : IDTO> findConverterBy(
+    private fun findConverterBy(
         predicate: (ConverterWrapper<*, *>) -> Boolean
     ): ConverterWrapper<*, *>? {
         return pConverters.findLast(predicate = predicate)
     }
 
     private fun <T : IModel, U : IDTO> findConverterByModel(model: T): ConverterWrapper<T, U>? {
-        return findConverterBy<T, U> { it.modelClass == model::class } as? ConverterWrapper<T, U>
+        return findConverterBy { it.modelClass == model::class } as? ConverterWrapper<T, U>
     }
 
     private fun <T : IModel, U : IDTO> findConverterByDTO(dto: U): ConverterWrapper<T, U>? {
-        return findConverterBy<T, U> { it.dtoClass == dto::class } as? ConverterWrapper<T, U>
+        return findConverterBy { it.dtoClass == dto::class } as? ConverterWrapper<T, U>
     }
 
 
-    fun <T : IModel, S : IDTO> convertModelToDTO(model: T): S {
+    internal fun <T : IModel, S : IDTO> convertModelToDTO(model: T): S {
         val converterWrapper = findConverterByModel<T, S>(model)
             ?: throw ConverterNotFoundException("There was no converter with the model class: ${model::class.simpleName} found")
         return converterWrapper.converter.convertModelToDTO(model)
     }
 
-    fun <T : IModel, S : IDTO> convertDTOToModel(dto: S): T {
+    internal fun <T : IModel, S : IDTO> convertDTOToModel(dto: S): T {
         val converterMap = findConverterByDTO<T, S>(dto)
             ?: throw ConverterNotFoundException("There was no converter with the dto class: ${dto::class.simpleName} found")
 

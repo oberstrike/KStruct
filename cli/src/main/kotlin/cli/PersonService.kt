@@ -1,12 +1,13 @@
 package cli
 
-import core.util.IConvertable
-import core.convert
+import codegen.RepositoryProxy
 
 class PersonService(private val personRepository: PersonRepository) {
     fun getPerson(): PersonDTO = converter.convert(personRepository.getPerson()) as PersonDTO
 }
 
+
+@RepositoryProxy
 interface PersonRepository {
     fun getPerson(): Person
 }
