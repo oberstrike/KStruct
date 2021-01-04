@@ -1,27 +1,31 @@
 package cli
 
-import codegen.RepositoryProxy
+import com.maju.annotations.RepositoryProxy
+import core.IRepository
 
-class PersonService(private val personRepository: PersonRepository) {
-    fun getPerson(): PersonDTO = converter.convert(personRepository.getPerson()) as PersonDTO
+class PersonService(private val personRepositoryProxy: PersonRepositoryProxy) {
+    fun getPerson() = personRepositoryProxy.getPerson()
+    fun save(person: PersonDTO) = personRepositoryProxy.save(person)
+    fun findAll() = personRepositoryProxy.findAll()
 }
 
 
-@RepositoryProxy
-interface PersonRepository {
+@RepositoryProxy(converter = PersonMapper::class)
+interface PersonRepository : IRepository<Person, PersonDTO> {
     fun getPerson(): Person
+    fun save(person: Person)
+    fun findAll(): List<Person>
 }
 
 class PersonRepositoryImpl : PersonRepository {
     override fun getPerson() = Person("Markus")
-}
-
-class PersonRepositoryProxy : PersonRepository {
-
-    override fun getPerson(): Person {
-        TODO("Not yet implemented")
+    override fun save(person: Person) {
+        println("Speichere.. $person")
     }
 
+    override fun findAll(): List<Person> {
+        return listOf()
+    }
 }
 
 

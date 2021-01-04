@@ -3,7 +3,6 @@ package core
 import core.util.IConvertable
 import core.util.IDTO
 import core.util.IModel
-import java.lang.Exception
 import kotlin.reflect.KClass
 
 fun initKStruct(block: KStruct.ConverterStruct.() -> Converter):

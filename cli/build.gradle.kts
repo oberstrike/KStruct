@@ -16,6 +16,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation("org.mapstruct:mapstruct:1.4.1.Final")
     kapt("org.mapstruct:mapstruct-processor:1.4.1.Final")
+    implementation("javax.enterprise:cdi-api:2.0.SP1")
 
 
 
