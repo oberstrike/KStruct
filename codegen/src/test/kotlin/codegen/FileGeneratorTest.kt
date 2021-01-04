@@ -5,7 +5,9 @@ import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.maju.FileGenerator
+import com.maju.utils.IConverter
 import org.junit.Test
+
 
 class FileGeneratorTest {
 
@@ -14,29 +16,30 @@ class FileGeneratorTest {
     fun schemaTest() {
         val clazzName = """SchemaTest2"""
 
-
         val kotlinSource = SourceFile.kotlin(
             "KClass.kt",
             """
-            import core.IConverter
-            import core.util.IDTO
-            import core.util.IModel
-            import codegen.annotations.RepositoryProxy
-            import core.IRepository
-            import codegen.annotations.InjectionStrategy
+            import com.maju.utils.IConverter
+            import com.maju.annotations.RepositoryProxy
+            import com.maju.annotations.InjectionStrategy
             import kotlin.collections.List
 
-            data class Person(val name: String) : IModel
+            data class Person(val name: String)
             
-            data class PersonDTO(val name: String) : IDTO
+            data class PersonDTO(val name: String) 
+            
+            abstract class TestRepository{
+                fun delete(person: Person){
+                    println("delete")
+                }
+            }
+
             
             @RepositoryProxy(converter = PersonConverter::class,
-              modelClass = Person::class,
-              dtoClass = PersonDTO::class,
               componentModel = "cdi",
               injectionStrategy = InjectionStrategy.PROPERTY
               )
-            interface PersonRepository: IRepository<Person, PersonDTO> {
+            interface PersonRepository{
                 fun findByName(name: String): Person
                 fun isDeleted(id: Long): Boolean
                 fun save(person: Person): Person
@@ -44,7 +47,7 @@ class FileGeneratorTest {
 
             }
             
-            class PersonRepositoryImpl : PersonRepository {
+            class PersonRepositoryImpl : PersonRepository,  TestRepository() {
                 override fun findByName(name: String): Person {
                     return Person(name)
                 }

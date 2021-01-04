@@ -1,7 +1,6 @@
 package cli
 
 import com.maju.annotations.RepositoryProxy
-import core.IRepository
 
 class PersonService(private val personRepositoryProxy: PersonRepositoryProxy) {
     fun getPerson() = personRepositoryProxy.getPerson()
@@ -11,7 +10,7 @@ class PersonService(private val personRepositoryProxy: PersonRepositoryProxy) {
 
 
 @RepositoryProxy(converter = PersonMapper::class)
-interface PersonRepository : IRepository<Person, PersonDTO> {
+interface PersonRepository {
     fun getPerson(): Person
     fun save(person: Person)
     fun findAll(): List<Person>

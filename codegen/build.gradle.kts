@@ -11,7 +11,6 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":core"))
     implementation("org.mapstruct:mapstruct:1.4.1.Final")
     implementation(kotlin("stdlib"))
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))

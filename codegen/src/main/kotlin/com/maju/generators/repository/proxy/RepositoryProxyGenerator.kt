@@ -11,7 +11,6 @@ import com.maju.generators.repository.proxy.dependency.PropertyDependencyGenerat
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
-import core.util.AbstractRepositoryProxy
 import com.maju.utils.*
 
 class RepositoryProxyGenerator(
@@ -29,7 +28,7 @@ class RepositoryProxyGenerator(
     @KotlinPoetMetadataPreview
     override fun generate(): FileSpec {
 
-        val abstractRepositoryProxyClassName = AbstractRepositoryProxy::class.toType().className.parameterizedBy(
+        val abstractRepositoryProxyClassName = IRepositoryProxy::class.toType().className.parameterizedBy(
             modelClass.toParameterizedTypeName(),
             dtoClass.toParameterizedTypeName()
         )
@@ -40,7 +39,7 @@ class RepositoryProxyGenerator(
         val repositorySimpleName = repositoryClassName.simpleName
 
         val typeSpecBuilder = TypeSpec.classBuilder("${repositorySimpleName}Proxy")
-        typeSpecBuilder.superclass(abstractRepositoryProxyClassName)
+        typeSpecBuilder.addSuperinterface(abstractRepositoryProxyClassName)
 
         //Dependency Injection
         val dependencyGenerator = if (componentModel == "cdi" && injectionStrategy == InjectionStrategy.CONSTRUCTOR) {
@@ -50,6 +49,21 @@ class RepositoryProxyGenerator(
         } else {
             DefaultDependencyGenerator(repositoryClassName, converterClassName)
         }
+
+        val proxyHelperClass = RepositoryProxyHelper::class.toType().className.parameterizedBy(
+            modelClass.toParameterizedTypeName(),
+            dtoClass.toParameterizedTypeName()
+        )
+
+        //Helper property
+        typeSpecBuilder.addProperty(
+            PropertySpec.builder("helper", proxyHelperClass)
+                .addModifiers(KModifier.PRIVATE)
+                .mutable(false)
+                .initializer("RepositoryProxyHelper(converter)")
+                .build()
+        )
+
 
         dependencyGenerator.applyDependency(typeSpecBuilder)
 
@@ -103,24 +117,24 @@ class RepositoryProxyGenerator(
             .map { "${it.name}Models" }
 
         for (dtoParam in dtoParams) {
-            val toModel = "val $dtoParam = toModel { ${dtoParam.substring(0, dtoParam.length - 1 - 4)} } "
+            val toModel = "val $dtoParam = helper.toModel { ${dtoParam.substring(0, dtoParam.length - 1 - 4)} } "
             statements.add(toModel)
         }
 
         for (dtoListParam in dtoListParams) {
             val toModel =
-                "val $dtoListParam = toModels { ${dtoListParam.subSequence(0, dtoListParam.length - 1 - 5)} }"
+                "val $dtoListParam = helper.toModels { ${dtoListParam.subSequence(0, dtoListParam.length - 1 - 5)} }"
             statements.add(toModel)
         }
 
         val allParams = dtoParams.plus(otherParams).plus(dtoListParams)
         val paramsAsString = allParams.joinToString()
 
-        val computeStatement = "compute { repository.$methodName( $paramsAsString ) }"
+        val computeStatement = "helper.compute { repository.$methodName( $paramsAsString ) }"
         if (returnType == dtoClass) {
-            statements.add("return toDTO { $computeStatement } ")
+            statements.add("return helper.toDTO { $computeStatement } ")
         } else if (returnType.hasArgument(dtoClass)) {
-            statements.add("return toDTOs {  compute { repository.$methodName ( $paramsAsString ) }  }")
+            statements.add("return helper.toDTOs {  helper.compute { repository.$methodName ( $paramsAsString ) }  }")
         } else if (returnType == UNIT.toType()) {
             statements.add(computeStatement)
         } else {

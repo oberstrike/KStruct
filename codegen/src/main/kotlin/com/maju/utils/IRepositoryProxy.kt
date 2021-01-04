@@ -1,13 +1,13 @@
-package core.util
+package com.maju.utils
 
-import core.IConverter
-
-interface RepositoryProxy<T : IModel, U : IDTO> {
+interface IRepositoryProxy<T, U> {
     val converter: IConverter<T, U>
 }
 
 @Suppress("UNCHECKED_CAST")
-abstract class AbstractRepositoryProxy<T : IModel, U : IDTO> : RepositoryProxy<T, U> {
+class RepositoryProxyHelper<T, U>(
+    override val converter: IConverter<T, U>
+) : IRepositoryProxy<T, U> {
 
     fun <S> compute(block: () -> S?): S? {
         return block()
@@ -22,5 +22,4 @@ abstract class AbstractRepositoryProxy<T : IModel, U : IDTO> : RepositoryProxy<T
 
     fun toModels(block: () -> List<U>?): List<T> =
         block()?.let { it.map { u -> converter.convertDTOToModel(u) } } as List<T>
-
 }

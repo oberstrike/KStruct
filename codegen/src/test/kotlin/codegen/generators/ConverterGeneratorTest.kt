@@ -1,11 +1,7 @@
 package codegen.generators
 
 import com.maju.annotations.Converter
-import com.maju.generators.converter.ConverterGenerator
-import core.IConverter
-import core.util.IDTO
-import core.util.IModel
-import org.junit.Test
+import com.maju.utils.IConverter
 
 @ExperimentalStdlibApi
 class ConverterGeneratorTest {
@@ -14,9 +10,9 @@ class ConverterGeneratorTest {
      * Example
      */
 
-    class Word : IModel
+    class Word
 
-    class WordDTO : IDTO
+    class WordDTO
 
     @Converter
     interface ITestConverter : IConverter<Word, WordDTO>
@@ -32,12 +28,4 @@ class ConverterGeneratorTest {
     }
 
 
-    @Test
-    fun generateTest() {
-        val generator = ConverterGenerator()
-
-        val fileSpec = generator.generate()
-        println(fileSpec)
-
-    }
 }

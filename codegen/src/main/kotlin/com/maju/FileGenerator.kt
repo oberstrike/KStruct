@@ -16,8 +16,6 @@ import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
-import core.IConverter
-import core.IRepository
 import com.maju.utils.*
 import java.io.File
 import javax.annotation.processing.*
@@ -64,13 +62,6 @@ class FileGenerator : AbstractProcessor() {
 
         for (repository in repositories) {
             val kmClazz = (repository as TypeElement).toImmutableKmClass()
-            val superType = kmClazz.supertypes.firstOrNull { it.className() == IRepository::class.asClassName() }
-
-            if (superType == null) {
-                printError("The annotated Class has to implement the repository: ${IRepository::class.qualifiedName}")
-                continue
-            }
-
             val repositoryProxyAnnotation = repository.getAnnotation(RepositoryProxy::class.java)
             val componentModel = repositoryProxyAnnotation.componentModel
             val injectionStrategy = repositoryProxyAnnotation.injectionStrategy
