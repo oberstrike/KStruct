@@ -28,9 +28,12 @@ class FileGeneratorTest {
             
             data class PersonDTO(val name: String) 
             
-            interface TestRepository{
+            interface SuperRepository{
                 fun delete(person: Person)
             }
+            
+            
+            interface TestRepository: SuperRepository
 
             
             @RepositoryProxy(converter = PersonConverter::class,

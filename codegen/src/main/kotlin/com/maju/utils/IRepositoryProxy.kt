@@ -1,5 +1,8 @@
 package com.maju.utils
 
+import java.util.stream.Stream
+import kotlin.streams.toList
+
 interface IRepositoryProxy<T, U> {
     val converter: IConverter<T, U>
 }
@@ -22,4 +25,6 @@ class RepositoryProxyHelper<T, U>(
 
     fun toModels(block: () -> List<U>): List<T> =
         block().let { it.map { u -> converter.convertDTOToModel(u) } }
+
+    fun toStreamDTOs(block: () -> Stream<T>): Stream<U> = toDTOs { block().toList() }.stream()
 }

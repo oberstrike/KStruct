@@ -9,6 +9,7 @@ import kotlinx.metadata.KmClassifier
 import kotlinx.metadata.KmType
 import javax.lang.model.element.TypeElement
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 @KotlinPoetMetadataPreview
 fun <T : Any> KClass<T>.toType(): CKType {
@@ -41,11 +42,15 @@ fun ImmutableKmClass.className(): ClassName {
 }
 
 @KotlinPoetMetadataPreview
-fun ImmutableKmType.toType(): CKType {
+fun ImmutableKmType.toType(argument: CKType? = null): CKType {
     return CKType(
         className = className(),
         isNullable = isNullable,
-        arguments = arguments.filter { it.type != null }.map { it.type!!.toType() }
+        arguments = if (argument == null) {
+            arguments.filter { it.type != null && it.type?.classifier is KmClassifier.Class }.map { it.type!!.toType() }
+        } else {
+            listOf(argument)
+        }
     )
 }
 

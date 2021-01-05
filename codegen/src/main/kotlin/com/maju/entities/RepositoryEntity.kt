@@ -9,8 +9,13 @@ data class RepositoryEntity(
     val type: CKType,
     val modelClass: CKType,
     val converter: ConverterEntity,
-    val methods: List<MethodEntity>
-) {
+    val methods: List<MethodEntity>,
+    val repositoryType: RepositoryType = RepositoryType.DEFAULT_ENTITY
+)
+
+
+enum class RepositoryType {
+    PANACHE_ENTITY, DEFAULT_ENTITY
 }
 
 data class ConverterEntity(

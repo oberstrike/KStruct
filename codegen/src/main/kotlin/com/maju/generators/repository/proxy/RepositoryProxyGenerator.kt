@@ -5,6 +5,8 @@ import com.maju.annotations.InjectionStrategy
 import com.maju.entities.MethodEntity
 import com.maju.entities.ParameterEntity
 import com.maju.entities.RepositoryEntity
+import com.maju.entities.RepositoryType
+import com.maju.generators.repository.ParameterEntityGenerator
 import com.maju.generators.repository.proxy.dependency.ConstructorDependencyGenerator
 import com.maju.generators.repository.proxy.dependency.DefaultDependencyGenerator
 import com.maju.generators.repository.proxy.dependency.PropertyDependencyGenerator
@@ -12,6 +14,11 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.maju.utils.*
+import com.squareup.kotlinpoet.metadata.toImmutableKmClass
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntityBase
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepositoryBase
+import kotlinx.metadata.KmClassifier
 
 class RepositoryProxyGenerator(
     private val packageName: String,
@@ -81,7 +88,80 @@ class RepositoryProxyGenerator(
             }
         }
 
+        when (repository.repositoryType) {
+            RepositoryType.PANACHE_ENTITY -> generatePanacheFunctions(typeSpecBuilder, dtoClass)
+
+        }
+
         return FileSpec.get(packageName, typeSpecBuilder.build())
+
+    }
+
+    @KotlinPoetMetadataPreview
+    private fun generatePanacheFunctions(typeSpecBuilder: TypeSpec.Builder, dtoClass: CKType) {
+        val panacheEntityKmClass = PanacheRepositoryBase::class.toImmutableKmClass()
+        val functions = panacheEntityKmClass.functions
+
+        for (function in functions) {
+            val name = function.name
+            val rType = if (function.returnType.classifier is KmClassifier.TypeParameter) {
+                dtoClass
+            } else {
+                if (function.returnType.arguments.isNotEmpty()) {
+                    function.returnType.toType(dtoClass)
+                } else {
+                    function.returnType.toType()
+                }
+            }
+
+            val parameters = function.valueParameters
+            val mParameters = mutableListOf<ParameterEntity>()
+            if(parameters.map { it.type }.any { it!!.arguments.isNotEmpty() }){
+                continue
+            }
+
+            if(rType.arguments.isNotEmpty())
+                continue
+
+            for (parameter in parameters) {
+                val pType = parameter.type ?: continue
+                val pName = parameter.name
+
+
+                val valParameter = if (parameter.type!!.classifier is KmClassifier.TypeParameter) {
+                    if (pName == "id") {
+                        LONG.toType()
+                    } else {
+                        dtoClass
+                    }
+                } else {
+                    pType.toType()
+                }
+                val parameterEntity = ParameterEntity(pName, valParameter)
+                mParameters.add(parameterEntity)
+            }
+
+
+            typeSpecBuilder.addFunction(
+                FunSpec.builder(name)
+                    .apply {
+                        for (parameter in mParameters) {
+                            addParameter(generateParamSpec(parameter))
+                        }
+                    }.returns(rType.toParameterizedTypeName())
+
+                    .apply {
+                        val statements = generateStatement(mParameters, rType, name)
+                        for (statement in statements) {
+                            addStatement(statement)
+                        }
+                    }
+
+                    .build()
+            )
+
+        }
+
 
     }
 
@@ -110,7 +190,8 @@ class RepositoryProxyGenerator(
 
     private fun generateStatement(params: List<ParameterEntity>, returnType: CKType, methodName: String): List<String> {
         val statements = mutableListOf<String>()
-        val otherParams = params.filterNot { it.type.className == dtoClass.className || it.type.hasArgument(dtoClass) }.map { it.name }
+        val otherParams = params.filterNot { it.type.className == dtoClass.className || it.type.hasArgument(dtoClass) }
+            .map { it.name }
         val dtoParams = params.filter { it.type.className == dtoClass.className }.map { "${it.name}Model" }
 
         val dtoListParams = params.filter { it.type.hasArgument(dtoClass) }

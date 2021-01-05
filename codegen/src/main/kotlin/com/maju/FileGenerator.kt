@@ -9,6 +9,7 @@ import com.maju.generators.repository.MethodEntityGenerator
 import com.maju.generators.repository.RepositoryEntityGenerator
 import com.maju.generators.repository.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
+import com.maju.entities.RepositoryType
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
@@ -17,6 +18,8 @@ import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.maju.utils.*
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
 import java.io.File
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
@@ -25,6 +28,7 @@ import javax.lang.model.element.ElementKind
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.TypeMirror
+import javax.lang.model.util.Elements
 import javax.tools.Diagnostic
 import kotlin.reflect.KClass
 
@@ -62,10 +66,15 @@ class FileGenerator : AbstractProcessor() {
 
         for (repository in repositories) {
             val kmClazz = (repository as TypeElement).toImmutableKmClass()
+            printNote("Generating the Proxy of $kmClazz")
 
             val inheritedInterfacesKmClasses = roundEnv.getAllSuperTypes(repository)
-            val inheritedFunctions = inheritedInterfacesKmClasses.flatMap { it.functions }
+            printNote("The class ${kmClazz.name} inherit from the interfaces: ${inheritedInterfacesKmClasses.map { it.name }}")
 
+            val inheritedFunctions = inheritedInterfacesKmClasses.flatMap { it.functions }
+            printNote("The class ${kmClazz.name} owns the inheritted functions: ${inheritedFunctions.joinToString()}")
+
+            val isPanacheEntity = kmClazz.supertypes.map { it.className().canonicalName }.contains(PanacheRepository::class.qualifiedName)
 
             val repositoryProxyAnnotation = repository.getAnnotation(RepositoryProxy::class.java)
             val componentModel = repositoryProxyAnnotation.componentModel
@@ -130,13 +139,16 @@ class FileGenerator : AbstractProcessor() {
                 type = kmClazz.toType(),
                 converter = converterEntity,
                 methods = methods,
-                name = "${kmClazz.name}Proxy"
+                name = "${kmClazz.name}Proxy",
+                repositoryType = if (isPanacheEntity) RepositoryType.PANACHE_ENTITY else RepositoryType.DEFAULT_ENTITY
             ).generate()
 
             val packageName = processingEnv.elementUtils.getPackageOf(repository).toString()
 
             val fileSpec =
                 RepositoryProxyGenerator(packageName, repositoryEntity, injectionStrategy, componentModel).generate()
+
+            printNote("Writng the file: ${repository.simpleName}Proxy.kt")
             generateClass(fileSpec, "${repository.simpleName}Proxy")
         }
 
@@ -203,6 +215,15 @@ class FileGenerator : AbstractProcessor() {
             Diagnostic.Kind.ERROR,
             msg
         )
+    }
+
+    private fun printNote(msg: String) {
+        processingEnv.messager.printMessage(
+            Diagnostic.Kind.NOTE,
+            msg
+
+        )
+        println(msg)
     }
 }
 

@@ -21,6 +21,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.3.72")
+    implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin-deployment:1.10.5.Final")
 
     testImplementation("io.mockk:mockk:1.10.2")
     testImplementation("org.jooq:joor:0.9.13")
@@ -38,7 +39,7 @@ dependencies {
 
 val myGroupId = "com.maju.proxy"
 val myArtifactId = "proxy-generator"
-val myVersion = "1.0.1"
+val myVersion = "1.0.3"
 
 val dokkaJavadocJar by tasks.creating(Jar::class) {
     dependsOn(tasks.dokkaJavadoc)

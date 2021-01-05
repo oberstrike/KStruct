@@ -3,6 +3,7 @@ package com.maju.generators.repository
 import com.maju.entities.ConverterEntity
 import com.maju.entities.MethodEntity
 import com.maju.entities.RepositoryEntity
+import com.maju.entities.RepositoryType
 import com.maju.utils.IGenerator
 import com.maju.utils.CKType
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
@@ -14,7 +15,8 @@ class RepositoryEntityGenerator(
     private val dtoClass: CKType,
     private val type: CKType,
     private val converter: ConverterEntity,
-    private val methods: List<MethodEntity>
+    private val methods: List<MethodEntity>,
+    private val repositoryType: RepositoryType
 ) : IGenerator<RepositoryEntity> {
 
     override fun generate(): RepositoryEntity {
@@ -24,7 +26,8 @@ class RepositoryEntityGenerator(
             dtoClass = dtoClass,
             type = type,
             converter = converter,
-            methods = methods
+            methods = methods,
+            repositoryType = repositoryType
         )
     }
 }
