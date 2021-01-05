@@ -6,6 +6,7 @@ import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.metadata.*
 import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import kotlinx.metadata.KmClassifier
+import kotlinx.metadata.KmType
 import javax.lang.model.element.TypeElement
 import kotlin.reflect.KClass
 
@@ -91,3 +92,4 @@ fun TypeElement.toType(): CKType {
     val kmClassName = toImmutableKmClass()
     return kmClassName.toType()
 }
+

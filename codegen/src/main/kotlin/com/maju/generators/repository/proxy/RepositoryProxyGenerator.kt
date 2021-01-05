@@ -71,7 +71,7 @@ class RepositoryProxyGenerator(
         for (method in repository.methods) {
             val parameters = method.parameters.map { it.type }
             val returnType = method.returnType
-            val isReturnTypeDTO = returnType == dtoClass
+            val isReturnTypeDTO = returnType.className == dtoClass.className
             val isReturnTypeListOfDTO = returnType.className == LIST && returnType.hasArgument(dtoClass)
 
             if (parameters.contains(dtoClass) || isReturnTypeDTO || isReturnTypeListOfDTO) {
@@ -110,8 +110,8 @@ class RepositoryProxyGenerator(
 
     private fun generateStatement(params: List<ParameterEntity>, returnType: CKType, methodName: String): List<String> {
         val statements = mutableListOf<String>()
-        val otherParams = params.filterNot { it.type == dtoClass || it.type.hasArgument(dtoClass) }.map { it.name }
-        val dtoParams = params.filter { it.type == dtoClass }.map { "${it.name}Model" }
+        val otherParams = params.filterNot { it.type.className == dtoClass.className || it.type.hasArgument(dtoClass) }.map { it.name }
+        val dtoParams = params.filter { it.type.className == dtoClass.className }.map { "${it.name}Model" }
 
         val dtoListParams = params.filter { it.type.hasArgument(dtoClass) }
             .map { "${it.name}Models" }
@@ -131,7 +131,7 @@ class RepositoryProxyGenerator(
         val paramsAsString = allParams.joinToString()
 
         val computeStatement = "helper.compute { repository.$methodName( $paramsAsString ) }"
-        if (returnType == dtoClass) {
+        if (returnType.className == dtoClass.className) {
             statements.add("return helper.toDTO { $computeStatement } ")
         } else if (returnType.hasArgument(dtoClass)) {
             statements.add("return helper.toDTOs {  helper.compute { repository.$methodName ( $paramsAsString ) }  }")

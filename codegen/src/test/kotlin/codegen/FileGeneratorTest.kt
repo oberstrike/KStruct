@@ -28,10 +28,8 @@ class FileGeneratorTest {
             
             data class PersonDTO(val name: String) 
             
-            abstract class TestRepository{
-                fun delete(person: Person){
-                    println("delete")
-                }
+            interface TestRepository{
+                fun delete(person: Person)
             }
 
             
@@ -39,15 +37,14 @@ class FileGeneratorTest {
               componentModel = "cdi",
               injectionStrategy = InjectionStrategy.PROPERTY
               )
-            interface PersonRepository{
-                fun findByName(name: String): Person
+            interface PersonRepository: TestRepository{
+                fun findByName(name: String): Person?
                 fun isDeleted(id: Long): Boolean
                 fun save(person: Person): Person
                 fun getAll(persons: List<Person>): List<Person>
-
             }
             
-            class PersonRepositoryImpl : PersonRepository,  TestRepository() {
+            class PersonRepositoryImpl : PersonRepository {
                 override fun findByName(name: String): Person {
                     return Person(name)
                 }
@@ -62,6 +59,10 @@ class FileGeneratorTest {
                 
                 override fun getAll(persons: List<Person>): List<Person> {
                       return persons
+                }
+                
+                override fun delete(person: Person){
+                    println("delete")
                 }
             }
             

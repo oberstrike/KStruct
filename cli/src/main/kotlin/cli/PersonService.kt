@@ -8,9 +8,12 @@ class PersonService(private val personRepositoryProxy: PersonRepositoryProxy) {
     fun findAll() = personRepositoryProxy.findAll()
 }
 
+interface SuperRepository {
+    fun delete(person: Person): Boolean
+}
 
 @RepositoryProxy(converter = PersonMapper::class)
-interface PersonRepository {
+interface PersonRepository: SuperRepository {
     fun getPerson(): Person
     fun save(person: Person)
     fun findAll(): List<Person>
@@ -24,6 +27,10 @@ class PersonRepositoryImpl : PersonRepository {
 
     override fun findAll(): List<Person> {
         return listOf()
+    }
+
+    override fun delete(person: Person): Boolean {
+        return true
     }
 }
 

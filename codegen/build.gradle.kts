@@ -38,7 +38,7 @@ dependencies {
 
 val myGroupId = "com.maju.proxy"
 val myArtifactId = "proxy-generator"
-val myVersion = "1.0.0"
+val myVersion = "1.0.1"
 
 val dokkaJavadocJar by tasks.creating(Jar::class) {
     dependsOn(tasks.dokkaJavadoc)

@@ -11,16 +11,17 @@ import com.maju.generators.repository.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.LIST
-import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.maju.utils.*
+import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import java.io.File
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.TypeMirror
@@ -57,11 +58,15 @@ class FileGenerator : AbstractProcessor() {
         val types = processingEnv.typeUtils
         elementClassInspector = ElementsClassInspector.create(elementUtils, types)
 
-
         val repositories = roundEnv.getElementsAnnotatedWith(RepositoryProxy::class.java) ?: mutableSetOf()
 
         for (repository in repositories) {
             val kmClazz = (repository as TypeElement).toImmutableKmClass()
+
+            val inheritedInterfacesKmClasses = roundEnv.getAllSuperTypes(repository)
+            val inheritedFunctions = inheritedInterfacesKmClasses.flatMap { it.functions }
+
+
             val repositoryProxyAnnotation = repository.getAnnotation(RepositoryProxy::class.java)
             val componentModel = repositoryProxyAnnotation.componentModel
             val injectionStrategy = repositoryProxyAnnotation.injectionStrategy
@@ -73,7 +78,7 @@ class FileGenerator : AbstractProcessor() {
 
             val isSubTypeOfConverter = implementedConverterElement.isSubType(converterType)
 
-            if(!isSubTypeOfConverter){
+            if (!isSubTypeOfConverter) {
                 printError("The converter: ${converterType.className.simpleName} has to implement the interface IConverter")
                 continue
             }
@@ -91,7 +96,8 @@ class FileGenerator : AbstractProcessor() {
 
             val methods = mutableListOf<MethodEntity>()
 
-            val functions = kmClazz.functions
+            val functions = kmClazz.functions.plus(inheritedFunctions)
+
             for (function in functions) {
                 val fName = function.name
 
@@ -137,6 +143,27 @@ class FileGenerator : AbstractProcessor() {
         return true
     }
 
+    private fun RoundEnvironment.getInterfaceByName(name: String): TypeElement? {
+        return rootElements.filter { it.kind == ElementKind.INTERFACE }.map { it as TypeElement }
+            .find { it.qualifiedName.toString() == name }
+    }
+
+    @KotlinPoetMetadataPreview
+    private fun RoundEnvironment.getAllSuperTypes(typeElement: TypeElement): List<ImmutableKmClass> {
+        val mutableList = mutableListOf<ImmutableKmClass>()
+        val kmClass = typeElement.toImmutableKmClass()
+        val superTypeElements = kmClass.supertypes.mapNotNull { getInterfaceByName(it.className().canonicalName) }
+        val superClasses =
+            superTypeElements.mapNotNull { getInterfaceByName(it.qualifiedName.toString())?.toImmutableKmClass() }
+        mutableList.addAll(superClasses)
+
+        for (superTypeElement in superTypeElements) {
+            mutableList.addAll(getAllSuperTypes(superTypeElement))
+        }
+
+        return mutableList
+    }
+
     @KotlinPoetMetadataPreview
     private fun generateClass(fileSpec: FileSpec, className: String) {
 
@@ -152,6 +179,8 @@ class FileGenerator : AbstractProcessor() {
     ): CKType {
         val listOfModelType = LIST.parameterizedToType(modelType)
         val listOfDTOType = LIST.parameterizedToType(dtoType)
+        val modelTypeNullable = modelType.copy(isNullable = true)
+        val dtoTypeNullable = dtoType.copy(isNullable = true)
 
         return when (rType) {
             modelType -> {
@@ -159,6 +188,9 @@ class FileGenerator : AbstractProcessor() {
             }
             listOfModelType -> {
                 listOfDTOType
+            }
+            modelTypeNullable -> {
+                dtoTypeNullable
             }
             else -> {
                 rType
