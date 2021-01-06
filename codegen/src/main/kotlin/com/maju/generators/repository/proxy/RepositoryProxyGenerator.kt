@@ -14,6 +14,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.maju.utils.*
+import com.squareup.kotlinpoet.metadata.isNullable
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntityBase
@@ -104,13 +105,14 @@ class RepositoryProxyGenerator(
 
         for (function in functions) {
             val name = function.name
-            val rType = if (function.returnType.classifier is KmClassifier.TypeParameter) {
-                dtoClass
+            val fReturnType = function.returnType
+            val rType = if (fReturnType.classifier is KmClassifier.TypeParameter) {
+                dtoClass.copy(isNullable = fReturnType.isNullable)
             } else {
-                if (function.returnType.arguments.isNotEmpty()) {
-                    function.returnType.toType(dtoClass)
+                if (fReturnType.arguments.isNotEmpty()) {
+                    fReturnType.toType(dtoClass)
                 } else {
-                    function.returnType.toType()
+                    fReturnType.toType()
                 }
             }
 
@@ -134,7 +136,11 @@ class RepositoryProxyGenerator(
                     if (pName == "id") {
                         LONG.toType()
                     } else {
-                        dtoClass
+                        if (pType.isNullable) {
+                            dtoClass.copy(isNullable = true)
+                        } else {
+                            dtoClass
+                        }
                     }
                 } else {
                     pType.toType()
@@ -213,15 +219,15 @@ class RepositoryProxyGenerator(
         val allParams = dtoParams.plus(otherParams).plus(dtoListParams)
         val paramsAsString = allParams.joinToString()
 
-        val computeStatement = "helper.compute { repository.$methodName( $paramsAsString ) }"
+        val computeStatement = "repository.$methodName( $paramsAsString )"
         if (returnType.className == dtoClass.className) {
-            statements.add("return helper.toDTO { $computeStatement } ")
+            statements.add("return helper.toDTO·{ $computeStatement } ")
         } else if (returnType.hasArgument(dtoClass) && returnType.className == LIST) {
-            statements.add("return helper.toDTOs {  helper.compute { repository.$methodName ( $paramsAsString ) }  }")
+            statements.add("return helper.toDTOs·{ repository.$methodName ( $paramsAsString )  }")
         } else if (returnType == UNIT.toType()) {
             statements.add(computeStatement)
         } else if (returnType.className == STREAM.topLevelClassName())
-            statements.add("return helper.toStreamDTOs { helper.compute { repository.$methodName ($paramsAsString) } }")
+            statements.add("return helper.toStreamDTOs·{ repository.$methodName($paramsAsString) }")
         else {
             statements.add("return $computeStatement")
         }

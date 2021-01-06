@@ -12,10 +12,6 @@ class RepositoryProxyHelper<T, U>(
     override val converter: IConverter<T, U>
 ) : IRepositoryProxy<T, U> {
 
-    fun <S> compute(block: () -> S): S {
-        return block()
-    }
-
     fun toDTO(block: () -> T?): U = block()?.let { converter.convertModelToDTO(it) } as U
 
     fun toDTOs(block: () -> List<T>): List<U> =
