@@ -98,3 +98,6 @@ fun TypeElement.toType(): CKType {
     return kmClassName.toType()
 }
 
+@JvmField
+val STREAM = ClassName("java.util.stream", "Stream")
+

@@ -116,11 +116,13 @@ class RepositoryProxyGenerator(
 
             val parameters = function.valueParameters
             val mParameters = mutableListOf<ParameterEntity>()
-            if(parameters.map { it.type }.any { it!!.arguments.isNotEmpty() }){
+
+
+            if (parameters.map { it.type }.any { it!!.arguments.isNotEmpty() }) {
                 continue
             }
 
-            if(rType.arguments.isNotEmpty())
+            if (rType.arguments.isNotEmpty() && rType.className != STREAM && rType.className != LIST)
                 continue
 
             for (parameter in parameters) {
@@ -214,11 +216,13 @@ class RepositoryProxyGenerator(
         val computeStatement = "helper.compute { repository.$methodName( $paramsAsString ) }"
         if (returnType.className == dtoClass.className) {
             statements.add("return helper.toDTO { $computeStatement } ")
-        } else if (returnType.hasArgument(dtoClass)) {
+        } else if (returnType.hasArgument(dtoClass) && returnType.className == LIST) {
             statements.add("return helper.toDTOs {  helper.compute { repository.$methodName ( $paramsAsString ) }  }")
         } else if (returnType == UNIT.toType()) {
             statements.add(computeStatement)
-        } else {
+        } else if (returnType.className == STREAM.topLevelClassName())
+            statements.add("return helper.toStreamDTOs { helper.compute { repository.$methodName ($paramsAsString) } }")
+        else {
             statements.add("return $computeStatement")
         }
         return statements

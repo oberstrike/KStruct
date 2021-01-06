@@ -60,4 +60,7 @@
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jetbrains.kotlin:kotlin-daemon-embeddable:1.4.10" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jetbrains.intellij.deps:trove4j:1.0.20181211" level="project" />
   </component>
+  <component name="Quarkus Tools">
+    <option name="hash" value="789797961" />
+  </component>
 </module>
