@@ -1,4 +1,4 @@
-package com.maju.utils
+package com.maju.annotations
 
 
 interface IConverter<T, S > {

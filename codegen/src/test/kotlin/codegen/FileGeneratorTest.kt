@@ -5,21 +5,44 @@ import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.maju.FileGenerator
-import com.maju.utils.IConverter
-import org.junit.Test
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
+import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
+import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import java.lang.reflect.Method
 
 
 class FileGeneratorTest {
 
     @KotlinPoetMetadataPreview
-    @Test
-    fun schemaTest() {
+    @ParameterizedTest
+    @ValueSource(strings = ["PROPERTY", "CONSTRUCTOR", "DEFAULT"])
+    fun generateRepositoryProxyTest(strategy: String) {
         val clazzName = """SchemaTest2"""
+        val converterName = "PersonConverter"
+        val packageName = """com.test"""
+        val findByNameMethodName = """findByName"""
+        val superDeleteMethodName = """delete"""
+        val isDeletedMethodName = """isDeleted"""
+        val componentModel = """cdi"""
+        val injectionStrategy = """InjectionStrategy.$strategy"""
+
+        val saveMethodName = """save"""
+
+        val getAllMethodName = """getAll"""
 
         val kotlinSource = SourceFile.kotlin(
             "KClass.kt",
             """
-            import com.maju.utils.IConverter
+            package $packageName
+                
+            import com.maju.annotations.IConverter
             import com.maju.annotations.RepositoryProxy
             import com.maju.annotations.InjectionStrategy
             import kotlin.collections.List
@@ -29,47 +52,25 @@ class FileGeneratorTest {
             data class PersonDTO(val name: String) 
             
             interface SuperRepository{
-                fun delete(person: Person)
+                fun $superDeleteMethodName(person: Person)
             }
             
-            
+           
             interface TestRepository: SuperRepository
-
             
-            @RepositoryProxy(converter = PersonConverter::class,
-              componentModel = "cdi",
-              injectionStrategy = InjectionStrategy.PROPERTY
+            @RepositoryProxy(converter = $converterName::class,
+              componentModel = "$componentModel",
+              injectionStrategy = $injectionStrategy
               )
-            interface PersonRepository: TestRepository{
-                fun findByName(name: String): Person?
-                fun isDeleted(id: Long): Boolean
-                fun save(person: Person): Person
-                fun getAll(persons: List<Person>): List<Person>
+            interface $clazzName: TestRepository{
+                fun $findByNameMethodName(name: String): Person?
+                fun $isDeletedMethodName(id: Long): Boolean
+                fun $saveMethodName(person: Person): Person
+                fun $getAllMethodName(persons: List<Person>): List<Person>
             }
+           
             
-            class PersonRepositoryImpl : PersonRepository {
-                override fun findByName(name: String): Person {
-                    return Person(name)
-                }
-            
-                override fun isDeleted(id: Long): Boolean {
-                    return true
-                }
-            
-                override fun save(person: Person): Person {
-                    return person
-                }
-                
-                override fun getAll(persons: List<Person>): List<Person> {
-                      return persons
-                }
-                
-                override fun delete(person: Person){
-                    println("delete")
-                }
-            }
-            
-            class PersonConverter : IConverter<Person, PersonDTO> {
+            class $converterName : IConverter<Person, PersonDTO> {
                 override fun convertDTOToModel(dto: PersonDTO): Person {
                     return Person(dto.name)
                 }
@@ -84,7 +85,6 @@ class FileGeneratorTest {
         val result = KotlinCompilation().apply {
             sources = listOf(kotlinSource)
             annotationProcessors = listOf(FileGenerator())
-
             inheritClassPath = true
             messageOutputStream = System.out
         }.compile()
@@ -98,6 +98,16 @@ class FileGeneratorTest {
             val code = it.readText()
             println(code)
         }
-        val generatedClazzName = "I$clazzName"
+        val generatedClazzName = "${clazzName}Proxy"
+        assert(sourcesGeneratedNames.contains("$generatedClazzName.kt"))
+
+        val classLoader = result.classLoader
+
+        val classInspector = ReflectiveClassInspector.create()
+        //TODO wait for kotlinpoet update
+
+
     }
+
+
 }

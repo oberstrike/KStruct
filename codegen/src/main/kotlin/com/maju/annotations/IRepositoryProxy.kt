@@ -1,4 +1,4 @@
-package com.maju.utils
+package com.maju.annotations
 
 import java.util.stream.Stream
 import kotlin.streams.toList

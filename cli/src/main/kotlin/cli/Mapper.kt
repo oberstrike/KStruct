@@ -1,6 +1,6 @@
 package cli
 
-import com.maju.utils.IConverter
+import com.maju.annotations.IConverter
 import org.mapstruct.Mapper
 
 @Mapper

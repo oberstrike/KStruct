@@ -12,6 +12,7 @@ allprojects {
     repositories {
         jcenter()
         maven(url="https://dl.bintray.com/oberstrike/maven")
+        mavenLocal()
     }
 }
 

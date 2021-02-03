@@ -1,23 +1,20 @@
 package com.maju.generators.repository.proxy
 
 
+import com.maju.annotations.IRepositoryProxy
 import com.maju.annotations.InjectionStrategy
+import com.maju.annotations.RepositoryProxyHelper
 import com.maju.entities.MethodEntity
 import com.maju.entities.ParameterEntity
 import com.maju.entities.RepositoryEntity
 import com.maju.entities.RepositoryType
-import com.maju.generators.repository.ParameterEntityGenerator
-import com.maju.generators.repository.proxy.dependency.ConstructorDependencyGenerator
-import com.maju.generators.repository.proxy.dependency.DefaultDependencyGenerator
-import com.maju.generators.repository.proxy.dependency.PropertyDependencyGenerator
+import com.maju.generators.repository.IGenerator
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.maju.utils.*
 import com.squareup.kotlinpoet.metadata.isNullable
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
-import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
-import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepositoryBase
 import kotlinx.metadata.KmClassifier
 
@@ -28,74 +25,84 @@ class RepositoryProxyGenerator(
     private val componentModel: String = "default"
 ) : IGenerator<FileSpec> {
 
+    private val modelCKType by lazy { repository.converter.modelType }
 
-    private val modelClass by lazy { repository.modelClass }
+    private val dtoCKType by lazy { repository.converter.dtoType }
 
-    private val dtoClass by lazy { repository.dtoClass }
+    private val converterClassName by lazy { repository.converter.type.className }
+
+    private val repositoryHelperPropertyName = "helper"
+
+    private val modelTypeName = modelCKType.toParameterizedTypeName()
+
+    private val dtoTypeName = dtoCKType.toParameterizedTypeName()
 
     @KotlinPoetMetadataPreview
     override fun generate(): FileSpec {
 
-        val abstractRepositoryProxyClassName = IRepositoryProxy::class.toType().className.parameterizedBy(
-            modelClass.toParameterizedTypeName(),
-            dtoClass.toParameterizedTypeName()
+
+        val (repositoryClassName, repositoryProxyTypeSpecBuilder) = generateRepositoryProxyTypeSpec(
+            modelTypeName,
+            dtoTypeName
         )
 
-        val converterClassName = repository.converter.type.className
-
-        val repositoryClassName = repository.type.className
-        val repositorySimpleName = repositoryClassName.simpleName
-
-        val typeSpecBuilder = TypeSpec.classBuilder("${repositorySimpleName}Proxy")
-        typeSpecBuilder.addSuperinterface(abstractRepositoryProxyClassName)
-
-        //Dependency Injection
-        val dependencyGenerator = if (componentModel == "cdi" && injectionStrategy == InjectionStrategy.CONSTRUCTOR) {
-            ConstructorDependencyGenerator(repositoryClassName, converterClassName)
-        } else if (componentModel == "cdi" && injectionStrategy == InjectionStrategy.PROPERTY) {
-            PropertyDependencyGenerator(repositoryClassName, converterClassName)
-        } else {
-            DefaultDependencyGenerator(repositoryClassName, converterClassName)
-        }
-
-        val proxyHelperClass = RepositoryProxyHelper::class.toType().className.parameterizedBy(
-            modelClass.toParameterizedTypeName(),
-            dtoClass.toParameterizedTypeName()
+        val repositoryProxyHelperClass = RepositoryProxyHelper::class.toType().className.parameterizedBy(
+            modelTypeName,
+            dtoTypeName
         )
 
         //Helper property
-        typeSpecBuilder.addProperty(
-            PropertySpec.builder("helper", proxyHelperClass)
+        repositoryProxyTypeSpecBuilder.addProperty(
+            PropertySpec.builder(repositoryHelperPropertyName, repositoryProxyHelperClass)
                 .addModifiers(KModifier.PRIVATE)
                 .mutable(false)
                 .initializer("RepositoryProxyHelper(converter)")
                 .build()
         )
 
+        injectionStrategy.dependencyGenerator.applyDependency(
+            typeSpecBuilder = repositoryProxyTypeSpecBuilder,
+            repositoryClassName = repositoryClassName,
+            converterClassName = converterClassName,
+            componentModel = componentModel
+        )
 
-        dependencyGenerator.applyDependency(typeSpecBuilder)
+        for (methodEntity in repository.methods) {
+            val parameters = methodEntity.parameters.map { it.type }
+            val returnType = methodEntity.returnType
+            val isReturnTypeDTO = returnType.className == dtoCKType.className
+            val isReturnTypeListOfDTO = returnType.className == LIST && returnType.hasArgument(dtoCKType)
 
-
-        for (method in repository.methods) {
-            val parameters = method.parameters.map { it.type }
-            val returnType = method.returnType
-            val isReturnTypeDTO = returnType.className == dtoClass.className
-            val isReturnTypeListOfDTO = returnType.className == LIST && returnType.hasArgument(dtoClass)
-
-            if (parameters.contains(dtoClass) || isReturnTypeDTO || isReturnTypeListOfDTO) {
-                typeSpecBuilder.addFunction(
-                    generateFunSpec(method)
+            if (parameters.contains(dtoCKType) || isReturnTypeDTO || isReturnTypeListOfDTO) {
+                repositoryProxyTypeSpecBuilder.addFunction(
+                    generateFunSpec(methodEntity)
                 )
             }
         }
 
         when (repository.repositoryType) {
-            RepositoryType.PANACHE_ENTITY -> generatePanacheFunctions(typeSpecBuilder, dtoClass)
-
+            RepositoryType.PANACHE_ENTITY -> generatePanacheFunctions(repositoryProxyTypeSpecBuilder, dtoCKType)
         }
 
-        return FileSpec.get(packageName, typeSpecBuilder.build())
+        return FileSpec.get(packageName, repositoryProxyTypeSpecBuilder.build())
 
+    }
+
+    @KotlinPoetMetadataPreview
+    private fun generateRepositoryProxyTypeSpec(
+        modelClassTypeName: TypeName,
+        dtoClassTypeName: TypeName
+    ): Pair<ClassName, TypeSpec.Builder> {
+        val abstractRepositoryProxyClassName = IRepositoryProxy::class.toType().className.parameterizedBy(
+            modelClassTypeName,
+            dtoClassTypeName
+        )
+        val repositoryClassName = repository.type.className
+        val repositorySimpleName = repositoryClassName.simpleName
+
+        val typeSpecBuilder = TypeSpec.classBuilder("${repositorySimpleName}Proxy")
+        typeSpecBuilder.addSuperinterface(abstractRepositoryProxyClassName)
+        return Pair(repositoryClassName, typeSpecBuilder)
     }
 
     @KotlinPoetMetadataPreview
@@ -159,7 +166,7 @@ class RepositoryProxyGenerator(
                     }.returns(rType.toParameterizedTypeName())
 
                     .apply {
-                        val statements = generateStatement(mParameters, rType, name)
+                        val statements = generateStatements(mParameters, rType, name)
                         for (statement in statements) {
                             addStatement(statement)
                         }
@@ -174,45 +181,57 @@ class RepositoryProxyGenerator(
     }
 
     private fun generateFunSpec(methodEntity: MethodEntity): FunSpec {
-
-        val name = methodEntity.name
-        val returnType = methodEntity.returnType
-        val parameters = methodEntity.parameters
-
-        return FunSpec.builder(name)
-            .returns(returnType.toParameterizedTypeName())
+        val methodName = methodEntity.name
+        val methodReturnType = methodEntity.returnType
+        val methodParameters = methodEntity.parameters
+        return FunSpec.builder(methodName)
+            .returns(methodReturnType.toParameterizedTypeName())
             .apply {
-                for (parameter in parameters) {
-                    addParameter(generateParamSpec(parameter))
-                }
-
-                val statements = generateStatement(parameters, returnType, name)
+                val statements = generateStatements(methodParameters, methodReturnType, methodName)
                 for (statement in statements) {
                     addStatement(statement)
                 }
-
-
             }
+            .addParameters(methodParameters.map { generateParamSpec(it) })
             .build()
     }
 
-    private fun generateStatement(params: List<ParameterEntity>, returnType: CKType, methodName: String): List<String> {
+    private fun generateStatements(
+        params: List<ParameterEntity>,
+        returnType: CKType,
+        methodName: String
+    ): List<String> {
         val statements = mutableListOf<String>()
-        val otherParams = params.filterNot { it.type.className == dtoClass.className || it.type.hasArgument(dtoClass) }
-            .map { it.name }
-        val dtoParams = params.filter { it.type.className == dtoClass.className }.map { "${it.name}Model" }
 
-        val dtoListParams = params.filter { it.type.hasArgument(dtoClass) }
+        val otherParams = params
+            .filterNot { it.type.className == dtoCKType.className || it.type.hasArgument(dtoCKType) }
+            .map { it.name }
+
+        val dtoParams = params
+            .filter { it.type.className == dtoCKType.className }
+            .map { "${it.name}Model" }
+
+        val dtoListParams = params.filter { it.type.hasArgument(dtoCKType) }
             .map { "${it.name}Models" }
 
         for (dtoParam in dtoParams) {
-            val toModel = "val $dtoParam = helper.toModel { ${dtoParam.substring(0, dtoParam.length - 1 - 4)} } "
+            val toModel = "val $dtoParam = $repositoryHelperPropertyName.toModel { ${
+                dtoParam.substring(
+                    0,
+                    dtoParam.length - 1 - 4
+                )
+            } } "
             statements.add(toModel)
         }
 
         for (dtoListParam in dtoListParams) {
             val toModel =
-                "val $dtoListParam = helper.toModels { ${dtoListParam.subSequence(0, dtoListParam.length - 1 - 5)} }"
+                "val $dtoListParam = $repositoryHelperPropertyName.toModels { ${
+                    dtoListParam.subSequence(
+                        0,
+                        dtoListParam.length - 1 - 5
+                    )
+                } }"
             statements.add(toModel)
         }
 
@@ -220,14 +239,14 @@ class RepositoryProxyGenerator(
         val paramsAsString = allParams.joinToString()
 
         val computeStatement = "repository.$methodName( $paramsAsString )"
-        if (returnType.className == dtoClass.className) {
-            statements.add("return helper.toDTO·{ $computeStatement } ")
-        } else if (returnType.hasArgument(dtoClass) && returnType.className == LIST) {
-            statements.add("return helper.toDTOs·{ repository.$methodName ( $paramsAsString )  }")
+        if (returnType.className == dtoCKType.className) {
+            statements.add("return $repositoryHelperPropertyName.toDTO·{ $computeStatement } ")
+        } else if (returnType.hasArgument(dtoCKType) && returnType.className == LIST) {
+            statements.add("return $repositoryHelperPropertyName.toDTOs·{ repository.$methodName ( $paramsAsString )  }")
         } else if (returnType == UNIT.toType()) {
             statements.add(computeStatement)
         } else if (returnType.className == STREAM.topLevelClassName())
-            statements.add("return helper.toStreamDTOs·{ repository.$methodName($paramsAsString) }")
+            statements.add("return $repositoryHelperPropertyName.toStreamDTOs·{ repository.$methodName($paramsAsString) }")
         else {
             statements.add("return $computeStatement")
         }
@@ -235,11 +254,9 @@ class RepositoryProxyGenerator(
     }
 
     private fun generateParamSpec(parameterEntity: ParameterEntity): ParameterSpec {
-        val name = parameterEntity.name
-        var type = parameterEntity.type
-
-
-        return ParameterSpec.builder(name, type.toParameterizedTypeName()).build()
+        val parameterName = parameterEntity.name
+        val parameterType = parameterEntity.type.toParameterizedTypeName()
+        return ParameterSpec.builder(parameterName, parameterType).build()
     }
 
 }

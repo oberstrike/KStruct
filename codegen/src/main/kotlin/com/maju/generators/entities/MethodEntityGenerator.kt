@@ -1,8 +1,8 @@
-package com.maju.generators.repository
+package com.maju.generators.entities
 
 import com.maju.entities.MethodEntity
 import com.maju.entities.ParameterEntity
-import com.maju.utils.IGenerator
+import com.maju.generators.repository.IGenerator
 import com.maju.utils.CKType
 
 class MethodEntityGenerator(

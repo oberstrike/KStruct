@@ -23,8 +23,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.3.72")
     implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin-deployment:1.10.5.Final")
 
-    testImplementation("io.mockk:mockk:1.10.2")
-    testImplementation("org.jooq:joor:0.9.13")
+
     implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.2.0")
     implementation("com.squareup:kotlinpoet:1.7.2")
     implementation("com.squareup:kotlinpoet-metadata:1.7.2")
@@ -33,6 +32,11 @@ dependencies {
     implementation("com.squareup:kotlinpoet-classinspector-reflective:1.7.2")
     implementation("com.github.tschuchortdev:kotlin-compile-testing:1.3.1")
     implementation("javax.enterprise:cdi-api:2.0.SP1")
+
+    testImplementation(platform("org.junit:junit-bom:5.7.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("io.mockk:mockk:1.10.2")
+    testImplementation("org.jooq:joor:0.9.13")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 }
@@ -138,3 +142,10 @@ bintray {
 }
 
 
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}

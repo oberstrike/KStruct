@@ -16,19 +16,7 @@ fun <T : Any> KClass<T>.toType(): CKType {
     return ClassInspectorUtil.createClassName(toImmutableKmClass().name).toType()
 }
 
-fun CKType.hasArgument(argument: ClassName): Boolean {
-    return arguments.map { it.className }.contains(argument)
-}
 
-fun CKType.hasArgument(argument: CKType): Boolean {
-    return arguments.contains(argument)
-}
-
-fun CKType.toParameterizedTypeName(): TypeName {
-    val rValue = if (arguments.isEmpty()) className
-    else className.parameterizedBy(arguments.map { each -> each.toParameterizedTypeName() })
-    return rValue.copy(nullable = isNullable)
-}
 
 
 @KotlinPoetMetadataPreview
@@ -63,41 +51,8 @@ fun ImmutableKmClass.toType(): CKType {
     )
 }
 
-fun ClassName.toType(): CKType {
-    return CKType(
-        className = this,
-        isNullable = isNullable
-    )
-}
 
-fun ClassName.parameterizedToType(type: CKType): CKType {
-    return CKType(
-        className = this,
-        isNullable = isNullable,
-        arguments = listOf(type)
-    )
-}
 
-fun ClassName.parameterizedToType(className: ClassName): CKType {
-    return CKType(
-        className = this,
-        isNullable = isNullable,
-        arguments = listOf(className.toType())
-    )
-}
 
-@KotlinPoetMetadataPreview
-fun TypeElement.isSubType(target: CKType): Boolean {
-    val kmClass = toImmutableKmClass()
-    return kmClass.supertypes.map { it.toType().className }.contains(target.className)
-}
 
-@KotlinPoetMetadataPreview
-fun TypeElement.toType(): CKType {
-    val kmClassName = toImmutableKmClass()
-    return kmClassName.toType()
-}
-
-@JvmField
-val STREAM = ClassName("java.util.stream", "Stream")
 

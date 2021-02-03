@@ -1,7 +1,6 @@
 package codegen.generators
 
-import com.maju.annotations.Converter
-import com.maju.utils.IConverter
+import com.maju.annotations.IConverter
 
 @ExperimentalStdlibApi
 class ConverterGeneratorTest {
@@ -14,7 +13,7 @@ class ConverterGeneratorTest {
 
     class WordDTO
 
-    @Converter
+
     interface ITestConverter : IConverter<Word, WordDTO>
 
     class ConverterImpl : ITestConverter{

@@ -7,16 +7,21 @@ import com.squareup.kotlinpoet.TypeSpec
 import javax.enterprise.context.ApplicationScoped
 import javax.inject.Inject
 
-class PropertyDependencyGenerator(
-    repositoryClassName: ClassName, converterClassName: ClassName
-) : AbstractDependencyGenerator(repositoryClassName, converterClassName) {
+class PropertyDependencyGenerator : DependencyGenerator {
 
-    override fun applyDependency(typeSpecBuilder: TypeSpec.Builder) {
+    override fun applyDependency(
+        typeSpecBuilder: TypeSpec.Builder,
+        repositoryClassName: ClassName,
+        converterClassName: ClassName,
+        componentModel: String
+    ) {
         //Dependency Injection - InjectionStrategy.PROPERTIES
         typeSpecBuilder.addProperty(
             PropertySpec.builder("converter", converterClassName)
                 .addModifiers(KModifier.OVERRIDE, KModifier.LATEINIT)
-                .addAnnotation(Inject::class)
+                .apply {
+                    if (componentModel == "cdi") addAnnotation(Inject::class)
+                }
                 .mutable(true)
                 .build()
         )
@@ -24,12 +29,13 @@ class PropertyDependencyGenerator(
         typeSpecBuilder.addProperty(
             PropertySpec.builder("repository", repositoryClassName)
                 .addModifiers(KModifier.PRIVATE, KModifier.LATEINIT)
-                .addAnnotation(Inject::class)
+                .apply {
+                    if (componentModel == "cdi") addAnnotation(Inject::class)
+                }
                 .mutable(true)
                 .build()
         )
-
-        typeSpecBuilder.addAnnotation(ApplicationScoped::class.java)
+        if (componentModel == "cdi") typeSpecBuilder.addAnnotation(ApplicationScoped::class.java)
     }
 
 }

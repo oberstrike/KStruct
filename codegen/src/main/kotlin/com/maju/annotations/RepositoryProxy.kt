@@ -1,5 +1,8 @@
 package com.maju.annotations
 
+import com.maju.generators.repository.proxy.dependency.DefaultDependencyGenerator
+import com.maju.generators.repository.proxy.dependency.DependencyGenerator
+import com.maju.generators.repository.proxy.dependency.PropertyDependencyGenerator
 import kotlin.reflect.KClass
 
 
@@ -9,11 +12,17 @@ import kotlin.reflect.KClass
 annotation class RepositoryProxy(
     val converter: KClass<*>,
     val componentModel: String = "default",
-    val injectionStrategy: InjectionStrategy = InjectionStrategy.CONSTRUCTOR
+    val injectionStrategy: InjectionStrategy = InjectionStrategy.DEFAULT
 )
 
-enum class InjectionStrategy {
-    CONSTRUCTOR, PROPERTY
+enum class InjectionStrategy(val dependencyGenerator: DependencyGenerator) {
+    DEFAULT(DefaultDependencyGenerator()),
+    CONSTRUCTOR(DefaultDependencyGenerator()),
+    PROPERTY(PropertyDependencyGenerator());
+}
+
+enum class ComponentModel{
+    DEFAULT, CDI
 }
 
 

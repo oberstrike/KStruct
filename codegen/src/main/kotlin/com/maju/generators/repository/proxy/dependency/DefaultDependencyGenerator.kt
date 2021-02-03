@@ -1,13 +1,16 @@
 package com.maju.generators.repository.proxy.dependency
 
 import com.squareup.kotlinpoet.*
+import javax.enterprise.context.ApplicationScoped
 
-class DefaultDependencyGenerator(
-    repositoryClassName: ClassName,
-    converterClassName: ClassName
-) : AbstractDependencyGenerator(repositoryClassName, converterClassName) {
+class DefaultDependencyGenerator : DependencyGenerator {
 
-    override fun applyDependency(typeSpecBuilder: TypeSpec.Builder) {
+    override fun applyDependency(
+        typeSpecBuilder: TypeSpec.Builder,
+        repositoryClassName: ClassName,
+        converterClassName: ClassName,
+        componentModel: String
+    ) {
         typeSpecBuilder.primaryConstructor(
             FunSpec.constructorBuilder()
                 .addParameter(
@@ -35,6 +38,7 @@ class DefaultDependencyGenerator(
                 .build()
         )
 
+        if (componentModel == "cdi") typeSpecBuilder.addAnnotation(ApplicationScoped::class)
 
     }
 }
