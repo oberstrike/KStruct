@@ -8,11 +8,9 @@ interface IConverter<T, S> {
 
     fun convertDTOToModel(dto: S): T
 
-    fun convertModelsToDTOs(models: List<T>): List<S> =
-        models.mapNotNull(this::convertModelToDTO)
+    fun convertModelsToDTOs(models: List<T>): List<S>
 
-    fun convertDTOsToModels(dtos: List<S>): List<T> =
-        dtos.mapNotNull(this::convertDTOToModel)
+    fun convertDTOsToModels(dtos: List<S>): List<T>
 
     fun convertStreamModelsToDTOs(models: Stream<T>): Stream<S> = models.map(this::convertModelToDTO)
 

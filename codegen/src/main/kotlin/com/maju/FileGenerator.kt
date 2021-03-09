@@ -10,6 +10,7 @@ import com.maju.generators.repository.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
 import com.maju.annotations.IConverter
 import com.maju.entities.ConverterEntity
+import com.maju.entities.PanacheEntity
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
@@ -71,11 +72,16 @@ class FileGenerator : AbstractProcessor() {
             }"
             )
 
-            val isPanacheEntity =
-                repositoryKmClazz.supertypes.map { it.className().canonicalName }
-                    .contains(PanacheRepository::class.qualifiedName)
+            val panacheKmType =
+                repositoryKmClazz.supertypes
+                    .findLast { (PanacheRepository::class.qualifiedName) == it.className().canonicalName }
 
-            if (isPanacheEntity) printNote("The class $repositoryName inherits the Repository: ${PanacheRepository::class.qualifiedName}")
+            var panacheEntity: PanacheEntity? = null
+
+            if (panacheKmType != null) {
+                printNote("The class $repositoryName inherits the Repository: ${PanacheRepository::class.qualifiedName}")
+                panacheEntity = PanacheEntity(panacheKmType.arguments.first().type!!.toType())
+            }
 
             val repositoryProxyAnnotation = repository.getAnnotation(RepositoryProxy::class.java)
 
@@ -120,14 +126,14 @@ class FileGenerator : AbstractProcessor() {
                         val parameterName = parameter.name
                         val parameterCKType = parameter.type?.toType()!!
                         val parameterType = convert(converterEntities, parameterCKType)
-                        ParameterEntity(parameterName, parameterType?: parameterCKType)
+                        ParameterEntity(parameterName, parameterType ?: parameterCKType)
                     }
 
 
                 val methodEntity = MethodEntityGenerator(
                     name = methodName,
                     parameters = methodParameters,
-                    returnType = methodConvertedReturnType?: methodReturnType
+                    returnType = methodConvertedReturnType ?: methodReturnType
                 ).generate()
 
                 methodEntities.add(methodEntity)
@@ -138,7 +144,8 @@ class FileGenerator : AbstractProcessor() {
                 type = repositoryKmClazz.toType(),
                 converters = converterEntities,
                 methods = methodEntities,
-                name = "${repositoryName}Proxy"
+                name = "${repositoryName}Proxy",
+                panacheEntity = panacheEntity
             ).generate()
 
             val targetPackageName = processingEnv.elementUtils.getPackageOf(repository).toString()

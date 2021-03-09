@@ -2,6 +2,7 @@ package codegen
 
 
 import com.maju.FileGenerator
+import com.maju.entities.PanacheEntity
 import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.tschuchort.compiletesting.KotlinCompilation
@@ -25,6 +26,7 @@ class FileGeneratorTest {
         val componentModel = """cdi"""
         val injectionStrategy = """InjectionStrategy.$strategy"""
 
+
         val saveMethodName = """save"""
 
         val getAllMethodName = """getAll"""
@@ -38,6 +40,7 @@ class FileGeneratorTest {
             import com.maju.annotations.RepositoryProxy
             import com.maju.annotations.InjectionStrategy
             import kotlin.collections.List
+            import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
 
             data class Person(val name: String)
             
@@ -64,6 +67,14 @@ class FileGeneratorTest {
                 fun $getAllMethodName(persons: List<Person>): List<Person>
                 fun getCustomType(): Paged
             }
+            
+            @RepositoryProxy(converters = [$converterName::class],
+             componentModel = "$componentModel",
+             injectionStrategy = $injectionStrategy
+            )
+            interface PanacheTest: PanacheRepository<Person> {
+            
+            }
            
             
             class $converterName : IConverter<Person, PersonDTO> {
@@ -74,6 +85,15 @@ class FileGeneratorTest {
                 override fun convertModelToDTO(model: Person): PersonDTO {
                     return PersonDTO(model.name)
                 }
+                
+                    override fun convertDTOsToModels(dtos: List<PersonDTO>): List<Person> {
+                        TODO("Not yet implemented")
+                    }
+
+                    override fun convertModelsToDTOs(models: List<Person>): List<PersonDTO> {
+                        TODO("Not yet implemented")
+                    }
+                
             }
         """.trimIndent()
         )

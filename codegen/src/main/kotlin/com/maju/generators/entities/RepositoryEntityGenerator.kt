@@ -2,6 +2,7 @@ package com.maju.generators.entities
 
 import com.maju.entities.ConverterEntity
 import com.maju.entities.MethodEntity
+import com.maju.entities.PanacheEntity
 import com.maju.entities.RepositoryEntity
 import com.maju.generators.repository.IGenerator
 import com.maju.utils.CKType
@@ -13,6 +14,7 @@ class RepositoryEntityGenerator(
     private val type: CKType,
     private val converters: List<ConverterEntity>,
     private val methods: List<MethodEntity>,
+    private val panacheEntity: PanacheEntity?,
 ) : IGenerator<RepositoryEntity> {
 
     override fun generate(): RepositoryEntity {
@@ -20,7 +22,8 @@ class RepositoryEntityGenerator(
             name = name,
             type = type,
             converters = converters,
-            methods = methods
+            methods = methods,
+            panacheEntity = panacheEntity
         )
     }
 }

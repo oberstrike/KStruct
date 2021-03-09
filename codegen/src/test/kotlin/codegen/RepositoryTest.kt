@@ -5,11 +5,10 @@ import com.maju.annotations.IConverter
 import com.maju.annotations.RepositoryProxy
 import com.maju.entities.*
 import com.maju.generators.repository.proxy.RepositoryProxyGenerator
+import com.maju.utils.STREAM
+import com.maju.utils.parameterizedToType
 import com.maju.utils.toType
-import com.squareup.kotlinpoet.BOOLEAN
-import com.squareup.kotlinpoet.INT
-import com.squareup.kotlinpoet.STRING
-import com.squareup.kotlinpoet.UNIT
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import org.junit.jupiter.api.Test
 
@@ -37,6 +36,15 @@ class PersonConverter : IConverter<Person, PersonDTO> {
     override fun convertModelToDTO(model: Person): PersonDTO {
         return PersonDTO(model.name)
     }
+
+    override fun convertDTOsToModels(dtos: List<PersonDTO>): List<Person> {
+        TODO("Not yet implemented")
+    }
+
+    override fun convertModelsToDTOs(models: List<Person>): List<PersonDTO> {
+        TODO("Not yet implemented")
+    }
+
 }
 
 class CustomConverter: IConverter<Custom, CustomDTO>{
@@ -45,6 +53,14 @@ class CustomConverter: IConverter<Custom, CustomDTO>{
     }
 
     override fun convertModelToDTO(model: Custom): CustomDTO {
+        TODO("Not yet implemented")
+    }
+
+    override fun convertDTOsToModels(dtos: List<CustomDTO>): List<Custom> {
+        TODO("Not yet implemented")
+    }
+
+    override fun convertModelsToDTOs(models: List<Custom>): List<CustomDTO> {
         TODO("Not yet implemented")
     }
 }
@@ -60,7 +76,6 @@ class RepositoryTest {
 
         val customOriginType = Custom::class.toType()
         val customTargetType = CustomDTO::class.toType()
-
 
 
         val personRepositoryType = PersonRepository::class.toType()
@@ -114,7 +129,7 @@ class RepositoryTest {
         val customTypeMethod = MethodEntity(
             name = "customParam",
             parameters = listOf(customParam),
-            returnType = UNIT.toType()
+            returnType = LIST.parameterizedToType(customTargetType)
         )
 
         val personConverter = ConverterEntity(personConverterType, originType, targetType)

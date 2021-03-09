@@ -187,7 +187,7 @@ class RepositoryProxyGenerator(
         val convertToModels = "convertDTOsToModels"
         val convertToDTO = "convertModelToDTO"
         val convertToDTOs = "convertModelsToDTOs"
-        val convertToDTOStream = "convertModelsToDTOs"
+        val convertToDTOStream = "convertStreamModelsToDTOs"
 
 
         val otherParams = params
@@ -236,7 +236,7 @@ class RepositoryProxyGenerator(
             //ReturnType is List with targetType as param
             "$converterName.$convertToDTOs"
         } else if (returnType.hasArgument(targetType) && returnType.className == STREAM.topLevelClassName())
-            "return $converterName.$convertToDTOStream"
+            "$converterName.$convertToDTOStream"
         else {
             ""
         }
