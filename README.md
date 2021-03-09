@@ -1,9 +1,9 @@
-multi-kotlin-project
+KStruct - The Kotlin-Annotation-Processor for extending Mapstruct and other Frameworks
 ====================
 
-A [multi-project build](https://docs.gradle.org/current/userguide/multi_project_builds.html) with two Kotlin based projects:
+A The project has 2 modules:
 
- 1. [core](./core) implements the main algorithm to compute the answer to the ultimate question of Life, the Universe and Everything
+ 1. [codegen](./codegen) implements the main
  2. [cli](./cli) implements the command line interface
 
 Common behavior for all projects, such as the configuration of _group_, _version_ and _repositories_, is defined in the [root project build script](./build.gradle.kts).
