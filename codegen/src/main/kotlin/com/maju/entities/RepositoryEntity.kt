@@ -8,30 +8,30 @@ import com.squareup.kotlinpoet.LIST
 data class RepositoryEntity(
     val name: String,
     val type: CKType,
-    val converter: ConverterEntity,
+    val converters: List<ConverterEntity>,
     val methods: List<MethodEntity>,
-    val repositoryType: RepositoryType = RepositoryType.DEFAULT_ENTITY
+    val panacheEntity: PanacheEntity? = null
 )
 
 
-enum class RepositoryType {
-    PANACHE_ENTITY, DEFAULT_ENTITY
-}
+data class PanacheEntity(
+    val type: CKType
+)
 
 data class ConverterEntity(
     val type: CKType,
-    val modelType: CKType,
-    val dtoType: CKType
+    val originType: CKType,
+    val targetType: CKType
 ) {
-    fun convert(type: CKType): CKType {
-        val listOfModelType = LIST.parameterizedToType(modelType)
-        val listOfDTOType = LIST.parameterizedToType(dtoType)
-        val modelTypeNullable = modelType.copy(isNullable = true)
-        val dtoTypeNullable = dtoType.copy(isNullable = true)
+    fun convert(type: CKType): CKType? {
+        val listOfModelType = LIST.parameterizedToType(originType)
+        val listOfDTOType = LIST.parameterizedToType(targetType)
+        val modelTypeNullable = originType.copy(isNullable = true)
+        val dtoTypeNullable = targetType.copy(isNullable = true)
 
         return when (type) {
-            modelType -> {
-                dtoType
+            originType -> {
+                targetType
             }
             listOfModelType -> {
                 listOfDTOType
@@ -40,7 +40,7 @@ data class ConverterEntity(
                 dtoTypeNullable
             }
             else -> {
-                type
+                null
             }
         }
     }

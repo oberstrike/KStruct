@@ -9,8 +9,6 @@ application {
 }
 
 dependencies {
-    implementation(project(":core"))
-    kapt(project(":core"))
     implementation(project(":codegen"))
     kapt(project(":codegen"))
     implementation(kotlin("stdlib"))

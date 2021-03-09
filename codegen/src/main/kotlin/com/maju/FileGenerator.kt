@@ -9,9 +9,9 @@ import com.maju.generators.entities.RepositoryEntityGenerator
 import com.maju.generators.repository.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
 import com.maju.annotations.IConverter
-import com.maju.entities.RepositoryType
+import com.maju.entities.ConverterEntity
+import com.maju.entities.PanacheEntity
 import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
@@ -72,11 +72,16 @@ class FileGenerator : AbstractProcessor() {
             }"
             )
 
-            val isPanacheEntity =
-                repositoryKmClazz.supertypes.map { it.className().canonicalName }
-                    .contains(PanacheRepository::class.qualifiedName)
+            val panacheKmType =
+                repositoryKmClazz.supertypes
+                    .findLast { (PanacheRepository::class.qualifiedName) == it.className().canonicalName }
 
-            if (isPanacheEntity) printNote("The class $repositoryName inherits the Repository: ${PanacheRepository::class.qualifiedName}")
+            var panacheEntity: PanacheEntity? = null
+
+            if (panacheKmType != null) {
+                printNote("The class $repositoryName inherits the Repository: ${PanacheRepository::class.qualifiedName}")
+                panacheEntity = PanacheEntity(panacheKmType.arguments.first().type!!.toType())
+            }
 
             val repositoryProxyAnnotation = repository.getAnnotation(RepositoryProxy::class.java)
 
@@ -85,37 +90,27 @@ class FileGenerator : AbstractProcessor() {
 
             val injectionStrategy = repositoryProxyAnnotation.injectionStrategy
             printNote("The proxy of the class: $repositoryName will use the injection-strategy: $injectionStrategy")
+            println("test")
 
 
             //Get the converter of the Repository
-            val converterTypeMirror = repository.getAnnotationClassValue<RepositoryProxy> { converter }
-            val converterElement = processingEnv.typeUtils.asElement(converterTypeMirror)
+            val converterTypeMirrors = repository.getAnnotationClassValues<RepositoryProxy> { converters }
             val converterType = IConverter::class.toType()
-            val implementedConverterElement = converterElement as TypeElement
-            val isSubTypeOfConverter = implementedConverterElement.isSubType(converterType)
 
-            if (!isSubTypeOfConverter) {
-                printError("The converter: ${converterType.className.simpleName} has to implement the interface IConverter")
-                continue
-            }
-
-            val converterCKType = implementedConverterElement
-                .toImmutableKmClass()
-                .supertypes.map { it.toType() }
-                .findLast { it.className == converterType.className }
-
-            if (converterCKType == null) {
-                printError("The $repository::class doesn't inherit from the interface IConverter")
-                continue
-            }
-            //--
-
-            val converterEntity = ConverterEntityGenerator(
-                implementedConverterElement.toType(),
-                converterCKType.arguments[0],
-                converterCKType.arguments[1]
-            ).generate()
-
+            val converterEntities = converterTypeMirrors.asSequence().map(processingEnv.typeUtils::asElement)
+                .map { it as TypeElement }
+                .filter { it.isSubType(converterType) }
+                .map {
+                    it.toImmutableKmClass().supertypes
+                        .map { supertype -> supertype.toType() }
+                        .findLast { supertype -> supertype.className == converterType.className } to it
+                }.map {
+                    ConverterEntityGenerator(
+                        it.second.toType(),
+                        it.first!!.arguments[0],
+                        it.first!!.arguments[1]
+                    ).generate()
+                }.toList()
 
             val methodEntities = mutableListOf<MethodEntity>()
 
@@ -124,21 +119,21 @@ class FileGenerator : AbstractProcessor() {
             for (function in kmFunctions) {
                 val methodName = function.name
                 val methodReturnType = function.returnType.toType()
-                val methodConvertedReturnType = converterEntity.convert(methodReturnType)
+                val methodConvertedReturnType = convert(converterEntities, methodReturnType)
 
                 val methodParameters = function.valueParameters
                     .map { parameter ->
                         val parameterName = parameter.name
                         val parameterCKType = parameter.type?.toType()!!
-                        val parameterType = converterEntity.convert(parameterCKType)
-                        ParameterEntity(parameterName, parameterType)
+                        val parameterType = convert(converterEntities, parameterCKType)
+                        ParameterEntity(parameterName, parameterType ?: parameterCKType)
                     }
 
 
                 val methodEntity = MethodEntityGenerator(
                     name = methodName,
                     parameters = methodParameters,
-                    returnType = methodConvertedReturnType
+                    returnType = methodConvertedReturnType ?: methodReturnType
                 ).generate()
 
                 methodEntities.add(methodEntity)
@@ -147,10 +142,10 @@ class FileGenerator : AbstractProcessor() {
 
             val repositoryEntity = RepositoryEntityGenerator(
                 type = repositoryKmClazz.toType(),
-                converter = converterEntity,
+                converters = converterEntities,
                 methods = methodEntities,
                 name = "${repositoryName}Proxy",
-                repositoryType = if (isPanacheEntity) RepositoryType.PANACHE_ENTITY else RepositoryType.DEFAULT_ENTITY
+                panacheEntity = panacheEntity
             ).generate()
 
             val targetPackageName = processingEnv.elementUtils.getPackageOf(repository).toString()
@@ -170,6 +165,10 @@ class FileGenerator : AbstractProcessor() {
         return true
     }
 
+    private fun convert(converters: List<ConverterEntity>, originType: CKType): CKType? {
+        return converters.mapNotNull { it.convert(originType) }.firstOrNull()
+    }
+
     private fun RoundEnvironment.getInterfaceByName(name: String): TypeElement? {
         return rootElements.filter { it.kind == ElementKind.INTERFACE }.map { it as TypeElement }
             .find { it.qualifiedName.toString() == name }
@@ -179,7 +178,8 @@ class FileGenerator : AbstractProcessor() {
     private fun RoundEnvironment.getAllSuperTypesOfElementRecursive(typeElement: TypeElement): List<ImmutableKmClass> {
         val mutableList = mutableListOf<ImmutableKmClass>()
         val kmClass = typeElement.toImmutableKmClass()
-        val superTypeElements = kmClass.supertypes.mapNotNull { getInterfaceByName(it.className().canonicalName) }
+        val superTypeElements =
+            kmClass.supertypes.mapNotNull { getInterfaceByName(it.className().canonicalName) }
         val superClasses =
             superTypeElements.mapNotNull { getInterfaceByName(it.qualifiedName.toString())?.toImmutableKmClass() }
         mutableList.addAll(superClasses)

@@ -3,12 +3,7 @@ package cli
 import com.maju.annotations.RepositoryProxy
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
 
-class PersonService(private val personRepositoryProxy: PersonRepositoryProxy) {
-    fun getPerson() = personRepositoryProxy.getPerson()
-    fun save(person: PersonDTO) = personRepositoryProxy.save(person)
-}
-
-@RepositoryProxy(converter = PersonMapper::class)
+@RepositoryProxy(converters = [PersonMapper::class])
 interface PersonRepository: PanacheRepository<Person> {
     fun getPerson(): Person
     fun save(person: Person)

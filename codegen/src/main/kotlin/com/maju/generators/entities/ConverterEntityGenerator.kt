@@ -6,15 +6,15 @@ import com.maju.utils.CKType
 
 class ConverterEntityGenerator(
     private val type: CKType,
-    private val modelType: CKType,
-    private val dtoType: CKType
+    private val originType: CKType,
+    private val targetType: CKType
 ) : IGenerator<ConverterEntity> {
 
     override fun generate(): ConverterEntity {
         return ConverterEntity(
             type = type,
-            modelType = modelType,
-            dtoType = dtoType
+            originType = originType,
+            targetType = targetType
         )
     }
 

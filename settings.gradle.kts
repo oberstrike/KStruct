@@ -1,2 +1,2 @@
 
-include("cli", "core", "codegen")
+include("cli", "codegen")
