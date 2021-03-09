@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
 annotation class RepositoryProxy(
-    val converter: KClass<*>,
+    val converters: Array<KClass<*>>,
     val componentModel: String = "default",
     val injectionStrategy: InjectionStrategy = InjectionStrategy.DEFAULT
 )

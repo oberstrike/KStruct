@@ -12,30 +12,37 @@ class PropertyDependencyGenerator : DependencyGenerator {
     override fun applyDependency(
         typeSpecBuilder: TypeSpec.Builder,
         repositoryClassName: ClassName,
-        converterClassName: ClassName,
+        converterClassNames: List<ClassName>,
         componentModel: String
     ) {
         //Dependency Injection - InjectionStrategy.PROPERTIES
-        typeSpecBuilder.addProperty(
-            PropertySpec.builder("converter", converterClassName)
-                .addModifiers(KModifier.OVERRIDE, KModifier.LATEINIT)
-                .apply {
-                    if (componentModel == "cdi") addAnnotation(Inject::class)
-                }
-                .mutable(true)
-                .build()
-        )
+        val componentModelIsCDI = componentModel == "cdi"
+
+        typeSpecBuilder.apply {
+            for (converterClassName in converterClassNames) {
+                addProperty(
+                    PropertySpec.builder(converterClassName.simpleName.decapitalize(), converterClassName)
+                        .addModifiers(KModifier.LATEINIT)
+                        .apply {
+                            if (componentModelIsCDI) addAnnotation(Inject::class)
+                        }
+                        .mutable(true)
+                        .build()
+                )
+
+            }
+        }
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder("repository", repositoryClassName)
                 .addModifiers(KModifier.PRIVATE, KModifier.LATEINIT)
                 .apply {
-                    if (componentModel == "cdi") addAnnotation(Inject::class)
+                    if (componentModelIsCDI) addAnnotation(Inject::class)
                 }
                 .mutable(true)
                 .build()
         )
-        if (componentModel == "cdi") typeSpecBuilder.addAnnotation(ApplicationScoped::class.java)
+        if (componentModelIsCDI) typeSpecBuilder.addAnnotation(ApplicationScoped::class.java)
     }
 
 }

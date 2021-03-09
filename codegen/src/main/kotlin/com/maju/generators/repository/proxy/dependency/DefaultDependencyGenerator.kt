@@ -8,28 +8,40 @@ class DefaultDependencyGenerator : DependencyGenerator {
     override fun applyDependency(
         typeSpecBuilder: TypeSpec.Builder,
         repositoryClassName: ClassName,
-        converterClassName: ClassName,
+        converterClassNames: List<ClassName>,
         componentModel: String
     ) {
         typeSpecBuilder.primaryConstructor(
             FunSpec.constructorBuilder()
-                .addParameter(
-                    ParameterSpec.builder("converter", converterClassName)
-                        .build()
-                ).addParameter(
+                .apply {
+                    for (converterClassName in converterClassNames) {
+                        addParameter(
+                            ParameterSpec.builder(
+                                converterClassName.simpleName.decapitalize(),
+                                converterClassName
+                            )
+                                .build()
+                        )
+                    }
+                }.addParameter(
                     ParameterSpec.builder("repository", repositoryClassName)
                         .build()
                 )
                 .build()
         )
 
-        typeSpecBuilder.addProperty(
-            PropertySpec.builder("converter", converterClassName)
-                .mutable(false)
-                .addModifiers(KModifier.OVERRIDE)
-                .initializer("converter")
-                .build()
-        )
+        typeSpecBuilder.apply {
+            for (converterClassName in converterClassNames) {
+                val converterName = converterClassName.simpleName.decapitalize()
+                addProperty(
+                    PropertySpec.builder(converterName, converterClassName)
+                        .mutable(false)
+                        .initializer(converterName)
+                        .build()
+                )
+            }
+
+        }
 
         typeSpecBuilder.addProperty(
             PropertySpec.builder("repository", repositoryClassName)

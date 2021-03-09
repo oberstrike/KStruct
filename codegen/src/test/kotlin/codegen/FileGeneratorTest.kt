@@ -1,21 +1,13 @@
 package codegen
 
 
+import com.maju.FileGenerator
+import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import com.maju.FileGenerator
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.LIST
-import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
-import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
-import com.squareup.kotlinpoet.metadata.specs.ClassInspector
-import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.lang.reflect.Method
 
 
 class FileGeneratorTest {
@@ -54,11 +46,14 @@ class FileGeneratorTest {
             interface SuperRepository{
                 fun $superDeleteMethodName(person: Person)
             }
-            
+           
+            data class Paged(
+                val persons: List<Person>? = null
+            )
            
             interface TestRepository: SuperRepository
             
-            @RepositoryProxy(converter = $converterName::class,
+            @RepositoryProxy(converters = [$converterName::class],
               componentModel = "$componentModel",
               injectionStrategy = $injectionStrategy
               )
@@ -67,6 +62,7 @@ class FileGeneratorTest {
                 fun $isDeletedMethodName(id: Long): Boolean
                 fun $saveMethodName(person: Person): Person
                 fun $getAllMethodName(persons: List<Person>): List<Person>
+                fun getCustomType(): Paged
             }
            
             
@@ -105,7 +101,6 @@ class FileGeneratorTest {
 
         val classInspector = ReflectiveClassInspector.create()
         //TODO wait for kotlinpoet update
-
 
     }
 

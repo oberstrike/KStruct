@@ -6,7 +6,7 @@ interface DependencyGenerator {
     fun applyDependency(
         typeSpecBuilder: TypeSpec.Builder,
         repositoryClassName: ClassName,
-        converterClassName: ClassName,
+        converterClassNames: List<ClassName>,
         componentModel: String
     )
 }
