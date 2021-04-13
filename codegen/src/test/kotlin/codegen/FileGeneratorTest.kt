@@ -2,11 +2,13 @@ package codegen
 
 
 import com.maju.FileGenerator
-import com.maju.entities.PanacheEntity
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
+import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
@@ -25,10 +27,7 @@ class FileGeneratorTest {
         val isDeletedMethodName = """isDeleted"""
         val componentModel = """cdi"""
         val injectionStrategy = """InjectionStrategy.$strategy"""
-
-
         val saveMethodName = """save"""
-
         val getAllMethodName = """getAll"""
 
         val kotlinSource = SourceFile.kotlin(
@@ -114,13 +113,25 @@ class FileGeneratorTest {
             val code = it.readText()
             println(code)
         }
-        val generatedClazzName = "${clazzName}Proxy"
-        assert(sourcesGeneratedNames.contains("$generatedClazzName.kt"))
+        val schemaTestProxyName = "${clazzName}Proxy"
+        assert(sourcesGeneratedNames.contains("$schemaTestProxyName.kt"))
 
         val classLoader = result.classLoader
+        val classInspector = ReflectiveClassInspector.create(classLoader)
 
-        val classInspector = ReflectiveClassInspector.create()
-        //TODO wait for kotlinpoet update
+        val schemaTestProxyClazz = classLoader.loadClass("com.test.$schemaTestProxyName")
+        val schemaTestProxyContainerData = classInspector.containerData(schemaTestProxyClazz.toImmutableKmClass(), schemaTestProxyClazz.asClassName(), null)
+        val container = schemaTestProxyContainerData.declarationContainer
+        val functions = container.functions
+        Assertions.assertEquals(4, functions.size)
+        val functionNames = functions.map { it.name }
+        Assertions.assertTrue(functionNames.contains(superDeleteMethodName))
+        Assertions.assertTrue(functionNames.contains(findByNameMethodName))
+        Assertions.assertTrue(functionNames.contains(getAllMethodName))
+        Assertions.assertTrue(functionNames.contains(saveMethodName))
+
+
+
 
     }
 

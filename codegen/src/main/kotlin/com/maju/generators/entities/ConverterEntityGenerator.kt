@@ -1,5 +1,6 @@
 package com.maju.generators.entities
 
+import com.maju.annotations.IConverter
 import com.maju.entities.ConverterEntity
 import com.maju.generators.repository.IGenerator
 import com.maju.utils.CKType
@@ -17,7 +18,6 @@ class ConverterEntityGenerator(
             targetType = targetType
         )
     }
-
-
-
 }
+
+
