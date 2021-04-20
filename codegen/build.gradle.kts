@@ -13,6 +13,7 @@ plugins {
 
 dependencies {
     implementation(kotlin("stdlib"))
+
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.google.auto.service:auto-service:1.0-rc4")
@@ -26,11 +27,12 @@ dependencies {
     implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin-deployment:1.12.1.Final")
 
     implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.2.0")
-    implementation("com.squareup:kotlinpoet:1.7.2")
-    implementation("com.squareup:kotlinpoet-metadata:1.7.2")
-    implementation("com.squareup:kotlinpoet-metadata-specs:1.7.2")
-    implementation("com.squareup:kotlinpoet-classinspector-elements:1.7.2")
-    implementation("com.squareup:kotlinpoet-classinspector-reflective:1.7.2")
+    val kotlinpoetVersion = "1.8.0"
+    implementation("com.squareup:kotlinpoet:$kotlinpoetVersion")
+    implementation("com.squareup:kotlinpoet-metadata:$kotlinpoetVersion")
+    implementation("com.squareup:kotlinpoet-metadata-specs:$kotlinpoetVersion")
+    implementation("com.squareup:kotlinpoet-classinspector-elements:$kotlinpoetVersion")
+    implementation("com.squareup:kotlinpoet-classinspector-reflective:$kotlinpoetVersion")
     implementation("com.github.tschuchortdev:kotlin-compile-testing:1.3.6")
     implementation("javax.enterprise:cdi-api:2.0.SP1")
 
@@ -141,6 +143,10 @@ bintray {
 
 }
 
+
+application {
+    mainClassName = "com.maju.Mainkt"
+}
 
 
 tasks.test {

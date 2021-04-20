@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.maju.utils.*
 import com.squareup.kotlinpoet.metadata.isNullable
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheQuery
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepositoryBase
 import kotlinx.metadata.KmClassifier
 
@@ -107,8 +108,10 @@ class RepositoryProxyGenerator(
                 continue
             }
 
-            if (targetReturnType.arguments.isNotEmpty() && targetReturnType.className != STREAM && targetReturnType.className != LIST)
-                continue
+            if (targetReturnType.arguments.isNotEmpty()
+                && targetReturnType.className != STREAM
+                && targetReturnType.className != LIST
+            ) continue
 
             for (parameter in parameters) {
                 val parameterType = parameter.type ?: continue
@@ -118,11 +121,8 @@ class RepositoryProxyGenerator(
                     if (parameterName == "id") {
                         LONG.toType()
                     } else {
-                        if (parameterType.isNullable) {
-                            targetType.copy(isNullable = true)
-                        } else {
-                            targetType
-                        }
+                        if (parameterType.isNullable) targetType.copy(isNullable = true)
+                        else targetType
                     }
                 } else {
                     parameterType.toType()
@@ -241,14 +241,15 @@ class RepositoryProxyGenerator(
             ""
         }
 
-        if(returnType.className != UNIT){
+
+        if (returnType.className != UNIT) {
             statements.add("val result = $computeStatement")
             if (returnType.isNullable) {
                 statements.add("return·if(result != null)·$convertStatement·(result) else null")
-            }else{
+            } else {
                 statements.add("return·$convertStatement·(result)")
             }
-        }else{
+        } else {
             statements.add(computeStatement)
         }
 
