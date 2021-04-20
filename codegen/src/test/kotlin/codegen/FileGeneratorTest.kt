@@ -5,12 +5,16 @@ import com.maju.FileGenerator
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
+import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import com.squareup.kotlinpoet.metadata.specs.ContainerData
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import org.junit.Assert
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.URLClassLoader
 
 
 class FileGeneratorTest {
@@ -29,6 +33,7 @@ class FileGeneratorTest {
         val injectionStrategy = """InjectionStrategy.$strategy"""
         val saveMethodName = """save"""
         val getAllMethodName = """getAll"""
+        val panacheTestRepositoryName = "PanacheTest"
 
         val kotlinSource = SourceFile.kotlin(
             "KClass.kt",
@@ -65,13 +70,14 @@ class FileGeneratorTest {
                 fun $saveMethodName(person: Person): Person
                 fun $getAllMethodName(persons: List<Person>): List<Person>
                 fun getCustomType(): Paged
+                private fun getName(person: Person): String = "Hallo"
             }
             
             @RepositoryProxy(converters = [$converterName::class],
              componentModel = "$componentModel",
              injectionStrategy = $injectionStrategy
             )
-            interface PanacheTest: PanacheRepository<Person> {
+            interface $panacheTestRepositoryName: PanacheRepository<Person> {
             
             }
            
@@ -97,31 +103,40 @@ class FileGeneratorTest {
         """.trimIndent()
         )
 
-        val result = KotlinCompilation().apply {
+        val compilationResult = KotlinCompilation().apply {
             sources = listOf(kotlinSource)
             annotationProcessors = listOf(FileGenerator())
             inheritClassPath = true
             messageOutputStream = System.out
         }.compile()
 
-        assert(result.exitCode == KotlinCompilation.ExitCode.OK)
+        assert(compilationResult.exitCode == KotlinCompilation.ExitCode.OK)
 
-        val sourcesGeneratedByAnnotationProcessor = result.sourcesGeneratedByAnnotationProcessor
+        val sourcesGeneratedByAnnotationProcessor = compilationResult.sourcesGeneratedByAnnotationProcessor
         val sourcesGeneratedNames = sourcesGeneratedByAnnotationProcessor.map { it.name }
 
+        /*
         sourcesGeneratedByAnnotationProcessor.forEach {
             val code = it.readText()
             println(code)
         }
-        val schemaTestProxyName = "${clazzName}Proxy"
-        assert(sourcesGeneratedNames.contains("$schemaTestProxyName.kt"))
+        */
 
-        val classLoader = result.classLoader
+
+        //Check first proxy
+        val generatedProxyClazzName = "${clazzName}Proxy"
+        assert(sourcesGeneratedNames.contains("$generatedProxyClazzName.kt"))
+
+        val classLoader = compilationResult.classLoader
         val classInspector = ReflectiveClassInspector.create(classLoader)
 
-        val schemaTestProxyClazz = classLoader.loadClass("com.test.$schemaTestProxyName")
-        val schemaTestProxyContainerData = classInspector.containerData(schemaTestProxyClazz.toImmutableKmClass(), schemaTestProxyClazz.asClassName(), null)
-        val container = schemaTestProxyContainerData.declarationContainer
+        val generatedProxyClass = classLoader.loadClass("com.test.$generatedProxyClazzName")
+        val generatedProxyContainerData = classInspector.containerData(
+            generatedProxyClass.toImmutableKmClass(),
+            generatedProxyClass.asClassName(),
+            null
+        )
+        val container = generatedProxyContainerData.declarationContainer
         val functions = container.functions
         Assertions.assertEquals(4, functions.size)
         val functionNames = functions.map { it.name }
@@ -131,8 +146,35 @@ class FileGeneratorTest {
         Assertions.assertTrue(functionNames.contains(saveMethodName))
 
 
+        testPanacheTestRepository(
+            panacheTestRepositoryName,
+            sourcesGeneratedNames,
+            classLoader,
+            classInspector
+        )
 
 
+    }
+
+    @KotlinPoetMetadataPreview
+    private fun testPanacheTestRepository(
+        panacheTestRepositoryName: String,
+        sourcesGeneratedNames: List<String>,
+        classLoader: URLClassLoader,
+        classInspector: ClassInspector
+    ) {
+        //Check panache proxy test
+        val generatedPanacheProxyClazzName = "${panacheTestRepositoryName}Proxy"
+        assert(sourcesGeneratedNames.contains("$generatedPanacheProxyClazzName.kt"))
+
+        val generatedPanacheProxyClass = classLoader.loadClass("com.test.$generatedPanacheProxyClazzName")
+        val generatedPanacheProxyContainerData = classInspector.containerData(
+            generatedPanacheProxyClass.toImmutableKmClass(),
+            generatedPanacheProxyClass.asClassName(),
+            null
+        )
+        val container = generatedPanacheProxyContainerData.declarationContainer
+        Assertions.assertEquals(22, container.functions.size)
     }
 
 

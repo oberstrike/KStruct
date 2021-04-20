@@ -13,11 +13,9 @@ import com.maju.entities.ConverterEntity
 import com.maju.entities.PanacheEntity
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
-import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
-import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.maju.utils.*
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
+import com.squareup.kotlinpoet.metadata.*
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
 import java.io.File
 import javax.annotation.processing.*
@@ -117,9 +115,13 @@ class FileGenerator : AbstractProcessor() {
             val kmFunctions = repositoryKmClazz.functions.plus(inheritedFunctions)
 
             for (function in kmFunctions) {
+                val isProtected = function.isPrivate || function.isProtected
+                if (isProtected) continue
+
                 val methodName = function.name
                 val methodReturnType = function.returnType.toType()
                 val methodConvertedReturnType = convert(converterEntities, methodReturnType)
+
 
                 val methodParameters = function.valueParameters
                     .map { parameter ->
