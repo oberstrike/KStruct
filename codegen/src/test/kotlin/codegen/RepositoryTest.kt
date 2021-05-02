@@ -5,7 +5,6 @@ import com.maju.annotations.IConverter
 import com.maju.annotations.RepositoryProxy
 import com.maju.entities.*
 import com.maju.generators.repository.proxy.RepositoryProxyGenerator
-import com.maju.utils.STREAM
 import com.maju.utils.parameterizedToType
 import com.maju.utils.toType
 import com.squareup.kotlinpoet.*
@@ -110,26 +109,30 @@ class RepositoryTest {
         val findByNameMethod = MethodEntity(
             "findByName",
             listOf(nameParameter, testParameter),
-            targetType
+            targetType,
+            false
         )
 
         val saveMethod = MethodEntity(
             name = "save",
             listOf(personParam),
-            targetType.copy(isNullable = true)
+            targetType.copy(isNullable = true),
+            true
         )
 
         val deleteMethod = MethodEntity(
             name = "deleteById",
             parameters = listOf(idParam),
-            returnType = BOOLEAN.toType()
+            returnType = BOOLEAN.toType(),
+            isSuspend = false
         )
 
 
         val customTypeMethod = MethodEntity(
             name = "customParam",
             parameters = listOf(customParam),
-            returnType = LIST.parameterizedToType(customTargetType)
+            returnType = LIST.parameterizedToType(customTargetType),
+            isSuspend = false
         )
 
         val personConverter = ConverterEntity(personConverterType, originType, targetType)
