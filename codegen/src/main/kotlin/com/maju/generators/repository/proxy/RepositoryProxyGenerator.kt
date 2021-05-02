@@ -154,6 +154,7 @@ class RepositoryProxyGenerator(
         val methodName = methodEntity.name
         val methodReturnType = methodEntity.returnType
         val methodParameters = methodEntity.parameters
+        val isSuspend = methodEntity.isSuspend
 
         return FunSpec.builder(methodName)
             .returns(methodReturnType.toParameterizedTypeName())
@@ -167,6 +168,7 @@ class RepositoryProxyGenerator(
                 for (statement in statements) {
                     addStatement(statement)
                 }
+                if (isSuspend) addModifiers(KModifier.SUSPEND)
             }
             .addParameters(methodParameters.map { generateParamSpec(it) })
             .build()

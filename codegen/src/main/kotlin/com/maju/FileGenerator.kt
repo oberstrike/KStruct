@@ -121,7 +121,7 @@ class FileGenerator : AbstractProcessor() {
                 val methodName = function.name
                 val methodReturnType = function.returnType.toType()
                 val methodConvertedReturnType = convert(converterEntities, methodReturnType)
-
+                val methodIsSuspend = function.isSuspend
 
                 val methodParameters = function.valueParameters
                     .map { parameter ->
@@ -135,7 +135,8 @@ class FileGenerator : AbstractProcessor() {
                 val methodEntity = MethodEntityGenerator(
                     name = methodName,
                     parameters = methodParameters,
-                    returnType = methodConvertedReturnType ?: methodReturnType
+                    returnType = methodConvertedReturnType ?: methodReturnType,
+                    isSuspend = methodIsSuspend
                 ).generate()
 
                 methodEntities.add(methodEntity)

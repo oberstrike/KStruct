@@ -51,7 +51,8 @@ data class ConverterEntity(
 data class MethodEntity(
     val name: String,
     val parameters: List<ParameterEntity>,
-    val returnType: CKType
+    val returnType: CKType,
+    val isSuspend: Boolean
 )
 
 data class ParameterEntity(
