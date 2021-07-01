@@ -1,5 +1,6 @@
 package com.maju.generators.repository.proxy.dependency
 
+import com.maju.annotations.ComponentModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
@@ -13,10 +14,10 @@ class PropertyDependencyGenerator : DependencyGenerator {
         typeSpecBuilder: TypeSpec.Builder,
         repositoryClassName: ClassName,
         converterClassNames: List<ClassName>,
-        componentModel: String
+        componentModel: ComponentModel
     ) {
         //Dependency Injection - InjectionStrategy.PROPERTIES
-        val componentModelIsCDI = componentModel == "cdi"
+        val componentModelIsCDI = componentModel == ComponentModel.CDI
 
         typeSpecBuilder.apply {
             for (converterClassName in converterClassNames) {

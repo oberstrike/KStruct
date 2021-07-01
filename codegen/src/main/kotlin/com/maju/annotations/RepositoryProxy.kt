@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 @MustBeDocumented
 annotation class RepositoryProxy(
     val converters: Array<KClass<*>>,
-    val componentModel: String = "default",
+    val componentModel: ComponentModel = ComponentModel.DEFAULT,
     val injectionStrategy: InjectionStrategy = InjectionStrategy.DEFAULT
 )
 
@@ -22,7 +22,7 @@ enum class InjectionStrategy(val dependencyGenerator: DependencyGenerator) {
 }
 
 enum class ComponentModel{
-    DEFAULT, CDI
+    DEFAULT, CDI, PROPERTY
 }
 
 

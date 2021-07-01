@@ -2,15 +2,15 @@ package codegen
 
 
 import com.maju.FileGenerator
+import com.maju.annotations.ComponentModel
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
-import com.squareup.kotlinpoet.metadata.specs.ContainerData
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import org.junit.Assert
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -23,13 +23,14 @@ class FileGeneratorTest {
     @ParameterizedTest
     @ValueSource(strings = ["PROPERTY", "CONSTRUCTOR", "DEFAULT"])
     fun generateRepositoryProxyTest(strategy: String) {
+        ComponentModel.CDI
         val clazzName = """SchemaTest2"""
         val converterName = "PersonConverter"
         val packageName = """com.test"""
         val findByNameMethodName = """findByName"""
         val superDeleteMethodName = """delete"""
         val isDeletedMethodName = """isDeleted"""
-        val componentModel = """cdi"""
+        val componentModel = """ComponentModel.CDI"""
         val injectionStrategy = """InjectionStrategy.$strategy"""
         val saveMethodName = """save"""
         val getAllMethodName = """getAll"""
@@ -45,6 +46,7 @@ class FileGeneratorTest {
             import com.maju.annotations.InjectionStrategy
             import kotlin.collections.List
             import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
+            import com.maju.annotations.ComponentModel
 
             data class Person(val name: String)
             
@@ -61,7 +63,7 @@ class FileGeneratorTest {
             interface TestRepository: SuperRepository
             
             @RepositoryProxy(converters = [$converterName::class],
-              componentModel = "$componentModel",
+              componentModel = $componentModel,
               injectionStrategy = $injectionStrategy
               )
             interface $clazzName: TestRepository{
@@ -74,7 +76,7 @@ class FileGeneratorTest {
             }
             
             @RepositoryProxy(converters = [$converterName::class],
-             componentModel = "$componentModel",
+             componentModel = $componentModel,
              injectionStrategy = $injectionStrategy
             )
             interface $panacheTestRepositoryName: PanacheRepository<Person> {
@@ -114,14 +116,6 @@ class FileGeneratorTest {
 
         val sourcesGeneratedByAnnotationProcessor = compilationResult.sourcesGeneratedByAnnotationProcessor
         val sourcesGeneratedNames = sourcesGeneratedByAnnotationProcessor.map { it.name }
-
-        /*
-        sourcesGeneratedByAnnotationProcessor.forEach {
-            val code = it.readText()
-            println(code)
-        }
-        */
-
 
         //Check first proxy
         val generatedProxyClazzName = "${clazzName}Proxy"
@@ -174,7 +168,7 @@ class FileGeneratorTest {
             null
         )
         val container = generatedPanacheProxyContainerData.declarationContainer
-        Assertions.assertEquals(22, container.functions.size)
+        Assertions.assertEquals(10, container.functions.size)
     }
 
 

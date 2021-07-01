@@ -1,5 +1,6 @@
 package com.maju.generators.repository.proxy.dependency
 
+import com.maju.annotations.ComponentModel
 import com.squareup.kotlinpoet.*
 
 interface DependencyGenerator {
@@ -7,7 +8,7 @@ interface DependencyGenerator {
         typeSpecBuilder: TypeSpec.Builder,
         repositoryClassName: ClassName,
         converterClassNames: List<ClassName>,
-        componentModel: String
+        componentModel: ComponentModel
     )
 }
 

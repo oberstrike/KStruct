@@ -2,7 +2,6 @@ package com.maju
 
 import com.maju.annotations.RepositoryProxy
 import com.maju.entities.MethodEntity
-import com.maju.entities.ParameterEntity
 import com.maju.generators.entities.ConverterEntityGenerator
 import com.maju.generators.entities.MethodEntityGenerator
 import com.maju.generators.entities.RepositoryEntityGenerator
@@ -11,12 +10,15 @@ import com.google.auto.service.AutoService
 import com.maju.annotations.IConverter
 import com.maju.entities.ConverterEntity
 import com.maju.entities.PanacheEntity
+import com.maju.generators.entities.ParameterEntityGenerator
+import com.maju.generators.entities.PanacheMethodEntityGenerator
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.maju.utils.*
 import com.squareup.kotlinpoet.metadata.*
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepositoryBase
 import java.io.File
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
@@ -50,52 +52,52 @@ class FileGenerator : AbstractProcessor() {
         annotations: MutableSet<out TypeElement>,
         roundEnv: RoundEnvironment
     ): Boolean {
+        printNote("Starting the generation of proxy classes")
         val elementUtils = processingEnv.elementUtils
         val types = processingEnv.typeUtils
         elementClassInspector = ElementsClassInspector.create(elementUtils, types)
 
         val repositories = roundEnv.getElementsAnnotatedWith(RepositoryProxy::class.java) ?: mutableSetOf()
 
-        for (repository in repositories) {
-            val repositoryKmClazz = (repository as TypeElement).toImmutableKmClass()
+        for (repositoryElement in repositories) {
+            val repositoryKmClazz = (repositoryElement as TypeElement).toImmutableKmClass()
             val repositoryName = repositoryKmClazz.name
 
-            val inheritedInterfacesKmClasses = roundEnv.getAllSuperTypesOfElementRecursive(repository)
+            val inheritedInterfacesKmClasses = roundEnv.getAllSuperTypesOfElementRecursive(repositoryElement)
             printNote("Generating the Proxy of $repositoryName")
             printNote("The class $repositoryName inherits from the interfaces: ${inheritedInterfacesKmClasses.map { it.name }}")
 
             val inheritedFunctions = inheritedInterfacesKmClasses.flatMap { it.functions }
-            printNote("The class $repositoryName owns the inherited functions: ${
-                inheritedFunctions.joinToString { it.name }
-            }"
-            )
+            printNote("The class $repositoryName owns the inherited functions: ${ inheritedFunctions.joinToString { it.name }}")
 
             val panacheKmType =
                 repositoryKmClazz.supertypes
                     .findLast { (PanacheRepository::class.qualifiedName) == it.className().canonicalName }
+            val isPanacheRepository = null != panacheKmType
+            printNote("PanacheRepository: $isPanacheRepository")
 
             var panacheEntity: PanacheEntity? = null
 
-            if (panacheKmType != null) {
+            if (isPanacheRepository) {
                 printNote("The class $repositoryName inherits the Repository: ${PanacheRepository::class.qualifiedName}")
-                panacheEntity = PanacheEntity(panacheKmType.arguments.first().type!!.toType())
+                panacheEntity = PanacheEntity(panacheKmType!!.arguments.first().type!!.toType())
             }
 
-            val repositoryProxyAnnotation = repository.getAnnotation(RepositoryProxy::class.java)
+            val repositoryProxyAnnotation = repositoryElement.getAnnotation(RepositoryProxy::class.java)
 
             val componentModel = repositoryProxyAnnotation.componentModel
             printNote("The proxy of the class: $repositoryName will use the component-model: $componentModel")
 
             val injectionStrategy = repositoryProxyAnnotation.injectionStrategy
             printNote("The proxy of the class: $repositoryName will use the injection-strategy: $injectionStrategy")
-            println("test")
 
 
             //Get the converter of the Repository
-            val converterTypeMirrors = repository.getAnnotationClassValues<RepositoryProxy> { converters }
+            val converterTypeMirrors = repositoryElement.getAnnotationClassValues<RepositoryProxy> { converters }
             val converterType = IConverter::class.toType()
 
-            val converterEntities = converterTypeMirrors.asSequence().map(processingEnv.typeUtils::asElement)
+            val converterEntities = converterTypeMirrors.asSequence()
+                .map(processingEnv.typeUtils::asElement)
                 .map { it as TypeElement }
                 .filter { it.isSubType(converterType) }
                 .map {
@@ -109,11 +111,13 @@ class FileGenerator : AbstractProcessor() {
                         it.first!!.arguments[1]
                     ).generate()
                 }.toList()
+            printNote("There were ${converterEntities.size} converters found")
 
             val methodEntities = mutableListOf<MethodEntity>()
 
             val kmFunctions = repositoryKmClazz.functions.plus(inheritedFunctions)
 
+            printNote("Starting the generation of the functions")
             for (function in kmFunctions) {
                 val isProtected = function.isPrivate || function.isProtected
                 if (isProtected) continue
@@ -128,7 +132,8 @@ class FileGenerator : AbstractProcessor() {
                         val parameterName = parameter.name
                         val parameterCKType = parameter.type?.toType()!!
                         val parameterType = convert(converterEntities, parameterCKType)
-                        ParameterEntity(parameterName, parameterType ?: parameterCKType)
+                        ParameterEntityGenerator(parameterName, parameterType ?: parameterCKType).generate()
+
                     }
 
 
@@ -141,6 +146,23 @@ class FileGenerator : AbstractProcessor() {
 
                 methodEntities.add(methodEntity)
             }
+            printNote("There were ${methodEntities.size} methods found")
+
+            if (panacheEntity != null) {
+                printNote("Generating the panache functions")
+
+                val converterEntity = converterEntities.firstOrNull() ?: throw Exception("")
+                val panacheRepositoryKmClass = PanacheRepositoryBase::class.toImmutableKmClass()
+                val functions = panacheRepositoryKmClass.functions
+                val converterTargetType = converterEntity.targetType
+                for (function in functions) {
+                    val methodEntity = PanacheMethodEntityGenerator(function, converterTargetType).generate()
+                    if (methodEntity != null) {
+                        methodEntities.add(methodEntity)
+                    }
+                }
+
+            }
 
 
             val repositoryEntity = RepositoryEntityGenerator(
@@ -151,7 +173,7 @@ class FileGenerator : AbstractProcessor() {
                 panacheEntity = panacheEntity
             ).generate()
 
-            val targetPackageName = processingEnv.elementUtils.getPackageOf(repository).toString()
+            val targetPackageName = processingEnv.elementUtils.getPackageOf(repositoryElement).toString()
 
             val fileSpec =
                 RepositoryProxyGenerator(
@@ -161,8 +183,11 @@ class FileGenerator : AbstractProcessor() {
                     componentModel
                 ).generate()
 
-            printNote("Writing the file: ${repositoryName}Proxy.kt")
-            generateClass(fileSpec, "${repositoryName}Proxy")
+            val className = repositoryKmClazz.className().simpleName
+
+            printNote("Writing the file: ${className}Proxy.kt to the package $targetPackageName")
+            generateClass(fileSpec, "${className}Proxy")
+
         }
 
         return true
@@ -196,10 +221,9 @@ class FileGenerator : AbstractProcessor() {
 
     @KotlinPoetMetadataPreview
     private fun generateClass(fileSpec: FileSpec, className: String) {
-
         val kaptKotlinGeneratedDir = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]
         val fileName = "${className}Generated"
-        fileSpec.writeTo(File("${kaptKotlinGeneratedDir}/$fileName.kt"))
+        fileSpec.writeTo(File("${kaptKotlinGeneratedDir}/"))
     }
 
 
@@ -210,10 +234,10 @@ class FileGenerator : AbstractProcessor() {
         )
     }
 
-    private fun printNote(msg: String) {
+    private fun printNote(message: String) {
         processingEnv.messager.printMessage(
             Diagnostic.Kind.NOTE,
-            msg
+            "$message \n"
         )
     }
 }
