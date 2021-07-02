@@ -29,12 +29,11 @@ class RepositoryProxyGenerator(
         )
 
         for (methodEntity in repositoryEntity.methods) {
-            for (converterEntity in repositoryEntity.converters) {
-                val functionGenerator = FunctionSpecGenerator(methodEntity, converterEntity)
-                repositoryProxyTypeSpecBuilder.addFunction(
-                    functionGenerator.generate()
-                )
-            }
+            val functionGenerator = FunctionSpecGenerator(methodEntity, repositoryEntity.converters)
+            repositoryProxyTypeSpecBuilder.addFunction(
+                functionGenerator.generate()
+            )
+
         }
 
         return FileSpec.get(packageName, repositoryProxyTypeSpecBuilder.build())

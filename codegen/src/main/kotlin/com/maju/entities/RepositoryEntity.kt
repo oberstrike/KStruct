@@ -3,6 +3,7 @@ package com.maju.entities
 import com.maju.utils.CKType
 import com.maju.utils.parameterizedToType
 import com.squareup.kotlinpoet.LIST
+import java.util.*
 
 
 data class RepositoryEntity(
@@ -29,6 +30,9 @@ data class ConverterEntity(
     val originType: CKType,
     val targetType: CKType
 ) {
+
+    fun getName() = type.className.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
+
     fun convert(type: CKType): CKType? {
         val listOfModelType = LIST.parameterizedToType(originType)
         val listOfDTOType = LIST.parameterizedToType(targetType)

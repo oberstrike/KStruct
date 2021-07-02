@@ -8,3 +8,7 @@ interface PersonMapper : IConverter<Person, PersonDTO> {
 
 }
 
+@Mapper
+interface CustomMapper: IConverter<Custom, CustomDTO>{
+
+}

@@ -2,99 +2,96 @@ package com.maju.generators.repository.proxy.statement
 
 import com.maju.entities.ConverterEntity
 import com.maju.entities.MethodEntity
+import com.maju.entities.ParameterEntity
 import com.maju.generators.repository.IGenerator
+import com.maju.utils.CKType
 import com.maju.utils.STREAM
-import com.maju.utils.hasArgument
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ITERABLE
 import com.squareup.kotlinpoet.LIST
-import com.squareup.kotlinpoet.UNIT
-import java.util.*
 
 class StatementsGenerator(
     private val methodEntity: MethodEntity,
-    private val converterEntity: ConverterEntity
+    private val converterEntities: List<ConverterEntity>
 ) : IGenerator<List<String>> {
 
     private val supportedTypes: List<ClassName> = listOf(LIST, STREAM.topLevelClassName(), ITERABLE.topLevelClassName())
+    private val convertToModel = "convertDTOToModel"
+    private val convertToDTO = "convertModelToDTO"
 
     override fun generate(): List<String> {
-        val targetType = converterEntity.targetType
-        val converterName =
-            converterEntity.type.className.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
         val returnType = methodEntity.returnType
         val params = methodEntity.parameters
         val methodName = methodEntity.name
-
-        val returnTypeIsNullable = returnType.isNullable
-
         val statements = mutableListOf<String>()
-        val convertToModel = "convertDTOToModel"
-        val convertToDTO = "convertModelToDTO"
+        val isNullable = methodEntity.returnType.isNullable
 
-        val otherParams = params
-            .filterNot { it.type.className == targetType.className || it.type.hasArgument(targetType) }
-            .map { it.name }
 
-        val dtoParams = params
-            .filter { it.type.className == targetType.className }
-            .map { "${it.name}Model" }
-
-        val dtoListParams = params.filter { it.type.hasArgument(targetType) }
-            .map { "${it.name}Models" }
-
-        //Create variable for dto params
-        for (dtoParam in dtoParams) {
-            val toModel = "val $dtoParam =·$converterName.$convertToModel(${
-                dtoParam.substring(
-                    0,
-                    dtoParam.length - 1 - 4
-                )
-            }) "
-            statements.add(toModel)
-        }
-
-        //Create variable for List with dto as argument params
-        for (dtoListParam in dtoListParams) {
-            val originName = dtoListParam.subSequence(0, dtoListParam.length - 1 - 5)
-            val toModel =
-                "val $dtoListParam =·$originName.map($converterName::$convertToModel)"
-            statements.add(toModel)
-        }
-
-        val allParams = dtoParams.plus(otherParams).plus(dtoListParams)
+        val allParams = params.map { analyseParam(it, statements) }
         val paramsAsString = allParams.joinToString(",·")
-
-        val computeStatement = "repository.$methodName·($paramsAsString)"
-
-        val isTargetType = returnType.className == targetType.className
-        val hasTargetTypeAsArgument = returnType.hasArgument(targetType)
-        val isSupportedType = supportedTypes.contains(returnType.className) && hasTargetTypeAsArgument
-
-        val convertStatement = if (isTargetType) {
-            //ReturnType is targetType
-            "$converterName.$convertToDTO·(result)"
-        } else {
-            if (isSupportedType) {
-                "result.map·($converterName::$convertToDTO)"
-            } else {
-                "result"
-            }
+        val computeStatement = "val result = repository.·$methodName·(·$paramsAsString·)"
+        statements.add(computeStatement)
+        if(isNullable){
+            statements.add("if(result·==·null)·return·null ")
         }
 
-
-        if (returnType.className != UNIT) {
-            statements.add("val result = $computeStatement")
-            if (returnTypeIsNullable) {
-                statements.add("return·if(result != null)·$convertStatement·else·null")
-            } else {
-                statements.add("return·$convertStatement·")
-            }
-        } else {
-            statements.add(computeStatement)
-        }
-
+        val returnStatement = analyseReturnType(returnType)
+        statements.add(returnStatement)
         return statements
+    }
+
+    private fun analyseParam(param: ParameterEntity, statements: MutableList<String>): String {
+        var paramName = param.name
+        val paramType = param.type
+        val isSupportedType = supportedTypes.contains(paramType.className)
+        val targetConverterEntity = converterEntities.find { converter -> converter.targetType.className == paramType.className }
+
+        if (isSupportedType) {
+            val argument = paramType.arguments.firstOrNull()
+            if (argument != null) {
+                val converterEntity = converterEntities.find { converter ->
+                    converter.targetType.className == argument.className
+                }
+                if (converterEntity != null) {
+                    val converterName = converterEntity.getName()
+                    paramName = "${param.name}Model"
+                    val statement = "val $paramName = ${param.name}.map(·$converterName::$convertToModel) "
+                    statements.add(statement)
+                }
+            }
+        }else if(targetConverterEntity != null) {
+            val converterName = targetConverterEntity.getName()
+            paramName = "${param.name}Model"
+            val statement = "val $paramName =·$converterName.$convertToModel(${param.name})"
+            statements.add(statement)
+        }
+
+        return paramName
+    }
+
+    private fun analyseReturnType(returnType: CKType): String {
+        var returnStatement = "return result"
+        val isSupportedType = supportedTypes.contains(returnType.className)
+        val targetConverterEntity = converterEntities.find { converter -> converter.targetType.className == returnType.className }
+
+        if(isSupportedType){
+            val argument = returnType.arguments.firstOrNull()
+            if (argument != null) {
+                val converterEntity = converterEntities.find { converter ->
+                    converter.targetType.className == argument.className
+                }
+                if (converterEntity != null) {
+                    val converterName = converterEntity.getName()
+                    return "return result.map($converterName::$convertToDTO)"
+                }
+            }
+        }else if(targetConverterEntity != null){
+            val converterName = targetConverterEntity.getName()
+            return "return $converterName.$convertToDTO(result)"
+
+        }
+
+        return returnStatement
     }
 
 }

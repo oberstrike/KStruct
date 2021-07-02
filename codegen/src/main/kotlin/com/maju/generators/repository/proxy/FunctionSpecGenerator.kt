@@ -10,7 +10,7 @@ import com.squareup.kotlinpoet.KModifier
 
 class FunctionSpecGenerator(
     private val methodEntity: MethodEntity,
-    private val converterEntity: ConverterEntity
+    private val converterEntities: List<ConverterEntity>
 ) : IGenerator<FunSpec> {
 
 
@@ -25,7 +25,7 @@ class FunctionSpecGenerator(
             .apply {
                 val statementGenerator = StatementsGenerator(
                     methodEntity,
-                    converterEntity
+                    converterEntities
                 )
 
                 val statements = statementGenerator.generate()
