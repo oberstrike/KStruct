@@ -9,6 +9,7 @@ import com.maju.generators.repository.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
 import com.maju.annotations.IConverter
 import com.maju.entities.ConverterEntity
+import com.maju.entities.JPAEntity
 import com.maju.entities.PanacheEntity
 import com.maju.generators.entities.ParameterEntityGenerator
 import com.maju.generators.entities.PanacheMethodEntityGenerator
@@ -19,6 +20,8 @@ import com.maju.utils.*
 import com.squareup.kotlinpoet.metadata.*
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepositoryBase
+import org.jetbrains.kotlin.util.collectionUtils.concat
+import org.springframework.data.jpa.repository.JpaRepository
 import java.io.File
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
@@ -68,20 +71,44 @@ class FileGenerator : AbstractProcessor() {
             printNote("The class $repositoryName inherits from the interfaces: ${inheritedInterfacesKmClasses.map { it.name }}")
 
             val inheritedFunctions = inheritedInterfacesKmClasses.flatMap { it.functions }
-            printNote("The class $repositoryName owns the inherited functions: ${ inheritedFunctions.joinToString { it.name }}")
+            printNote("The class $repositoryName owns the inherited functions: ${inheritedFunctions.joinToString { it.name }}")
 
             val panacheKmType =
                 repositoryKmClazz.supertypes
                     .findLast { (PanacheRepository::class.qualifiedName) == it.className().canonicalName }
-            val isPanacheRepository = null != panacheKmType
+            var isPanacheRepository = null != panacheKmType
             printNote("PanacheRepository: $isPanacheRepository")
 
             var panacheEntity: PanacheEntity? = null
+            var jpaEntity: JPAEntity? = null
 
             if (isPanacheRepository) {
-                printNote("The class $repositoryName inherits the Repository: ${PanacheRepository::class.qualifiedName}")
-                panacheEntity = PanacheEntity(panacheKmType!!.arguments.first().type!!.toType())
+                printNote("The class $repositoryName inherits the repository: ${PanacheRepository::class.qualifiedName}")
+                val entityType = panacheKmType!!.arguments.first().type!!.toType()
+                val entityContainer = elementClassInspector.declarationContainerFor(entityType.className)
+                val idProperty = entityContainer.properties.firstOrNull { it.name == "id" }
+                if(idProperty == null){
+                    printWarning("The panache entity: $repositoryName has no id, so no panache methods will be generated.")
+                }else{
+                    val idType = idProperty.returnType.toType()
+                    panacheEntity = PanacheEntity(entityType, idType)
+                    isPanacheRepository = false
+                }
             }
+
+            val jpaRepositoryKmType = repositoryKmClazz.supertypes
+                .findLast { (JpaRepository::class.qualifiedName) == it.className().canonicalName }
+
+            val isJpaRepository = null != jpaRepositoryKmType
+            printNote("Jpa Repository: $isJpaRepository")
+
+            if (isJpaRepository) {
+                printNote("The class $repositoryName inherits ${JpaRepository::class.qualifiedName}")
+                val entityType = jpaRepositoryKmType!!.arguments.first().type!!.toType()
+                val idType = jpaRepositoryKmType.arguments[1].type!!.toType()
+                jpaEntity = JPAEntity(entityType, idType)
+            }
+
 
             val repositoryProxyAnnotation = repositoryElement.getAnnotation(RepositoryProxy::class.java)
 
@@ -155,13 +182,33 @@ class FileGenerator : AbstractProcessor() {
                 val panacheRepositoryKmClass = PanacheRepositoryBase::class.toImmutableKmClass()
                 val functions = panacheRepositoryKmClass.functions
                 val converterTargetType = converterEntity.targetType
+                val idType = panacheEntity.idType
+
                 for (function in functions) {
-                    val methodEntity = PanacheMethodEntityGenerator(function, converterTargetType).generate()
+                    val methodEntity = PanacheMethodEntityGenerator(function, converterTargetType, idType).generate()
                     if (methodEntity != null) {
                         methodEntities.add(methodEntity)
                     }
                 }
+            }
 
+            if(jpaEntity != null){
+                printNote("Generating the jpa functions")
+                val converterEntity = converterEntities.firstOrNull() ?: throw Exception("")
+                val jpaRepositoryKmClass = com.maju.jpa.JpaRepository::class.toImmutableKmClass()
+                val crudRepositoryKmClass = com.maju.jpa.CrudRepository::class.toImmutableKmClass()
+                val pagingAndSortingRepositoryKmClass = com.maju.jpa.CrudRepository::class.toImmutableKmClass()
+
+                val functions = jpaRepositoryKmClass.functions.concat(crudRepositoryKmClass.functions).concat(pagingAndSortingRepositoryKmClass.functions)!!
+                val converterTargetType = converterEntity.targetType
+
+                val idType = jpaEntity.idType
+                for (function in functions) {
+                    val methodEntity = PanacheMethodEntityGenerator(function, converterTargetType, idType).generate()
+                    if (methodEntity != null) {
+                        methodEntities.add(methodEntity)
+                    }
+                }
             }
 
 
@@ -230,14 +277,21 @@ class FileGenerator : AbstractProcessor() {
     private fun printError(msg: String) {
         processingEnv.messager.printMessage(
             Diagnostic.Kind.ERROR,
-            msg
+            "$msg \r\n"
         )
     }
 
     private fun printNote(message: String) {
         processingEnv.messager.printMessage(
             Diagnostic.Kind.NOTE,
-            "$message \n"
+            "$message \r\n"
+        )
+    }
+
+    private fun printWarning(message: String) {
+        processingEnv.messager.printMessage(
+            Diagnostic.Kind.WARNING,
+            "$message \r\n"
         )
     }
 }

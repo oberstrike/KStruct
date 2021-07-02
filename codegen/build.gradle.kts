@@ -32,8 +32,9 @@ dependencies {
     //Panache for quarkus
     implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin-deployment:$quarkusVersion")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.2.0")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.3.0")
+    implementation("org.springframework.data:spring-data-jpa:2.5.2")
+    
     implementation("com.squareup:kotlinpoet:$kotlinpoetVersion")
     implementation("com.squareup:kotlinpoet-metadata:$kotlinpoetVersion")
     implementation("com.squareup:kotlinpoet-metadata-specs:$kotlinpoetVersion")

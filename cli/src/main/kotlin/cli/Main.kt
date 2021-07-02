@@ -4,11 +4,12 @@ package cli
 
 
 fun main() {
-    val repository = PersonRepositoryImpl()
+
 }
 
 data class Person(
-    val name: String
+    val name: String,
+    val id: Long
 )
 
 data class PersonDTO(

@@ -36,14 +36,6 @@ class PersonConverter : IConverter<Person, PersonDTO> {
         return PersonDTO(model.name)
     }
 
-    override fun convertDTOsToModels(dtos: List<PersonDTO>): List<Person> {
-        TODO("Not yet implemented")
-    }
-
-    override fun convertModelsToDTOs(models: List<Person>): List<PersonDTO> {
-        TODO("Not yet implemented")
-    }
-
 }
 
 class CustomConverter: IConverter<Custom, CustomDTO>{
@@ -55,13 +47,6 @@ class CustomConverter: IConverter<Custom, CustomDTO>{
         TODO("Not yet implemented")
     }
 
-    override fun convertDTOsToModels(dtos: List<CustomDTO>): List<Custom> {
-        TODO("Not yet implemented")
-    }
-
-    override fun convertModelsToDTOs(models: List<Custom>): List<CustomDTO> {
-        TODO("Not yet implemented")
-    }
 }
 
 @KotlinPoetMetadataPreview

@@ -1,33 +1,36 @@
-package com.maju.generators.repository.proxy
+package com.maju.generators.repository.proxy.statement
 
 import com.maju.entities.ConverterEntity
-import com.maju.entities.ParameterEntity
+import com.maju.entities.MethodEntity
 import com.maju.generators.repository.IGenerator
-import com.maju.utils.CKType
 import com.maju.utils.STREAM
 import com.maju.utils.hasArgument
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.ITERABLE
 import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.UNIT
+import java.util.*
 
 class StatementsGenerator(
-    private val params: List<ParameterEntity>,
-    private val returnType: CKType,
-    private val methodName: String,
+    private val methodEntity: MethodEntity,
     private val converterEntity: ConverterEntity
 ) : IGenerator<List<String>> {
 
+    private val supportedTypes: List<ClassName> = listOf(LIST, STREAM.topLevelClassName(), ITERABLE.topLevelClassName())
+
     override fun generate(): List<String> {
         val targetType = converterEntity.targetType
-        val converterName = converterEntity.type.className.simpleName.decapitalize()
+        val converterName =
+            converterEntity.type.className.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
+        val returnType = methodEntity.returnType
+        val params = methodEntity.parameters
+        val methodName = methodEntity.name
+
         val returnTypeIsNullable = returnType.isNullable
 
         val statements = mutableListOf<String>()
         val convertToModel = "convertDTOToModel"
-        val convertToModels = "convertDTOsToModels"
         val convertToDTO = "convertModelToDTO"
-        val convertToDTOs = "convertModelsToDTOs"
-        val convertToDTOStream = "convertStreamModelsToDTOs"
-
 
         val otherParams = params
             .filterNot { it.type.className == targetType.className || it.type.hasArgument(targetType) }
@@ -53,13 +56,9 @@ class StatementsGenerator(
 
         //Create variable for List with dto as argument params
         for (dtoListParam in dtoListParams) {
+            val originName = dtoListParam.subSequence(0, dtoListParam.length - 1 - 5)
             val toModel =
-                "val $dtoListParam =·$converterName.$convertToModels·(${
-                    dtoListParam.subSequence(
-                        0,
-                        dtoListParam.length - 1 - 5
-                    )
-                })"
+                "val $dtoListParam =·$originName.map($converterName::$convertToModel)"
             statements.add(toModel)
         }
 
@@ -68,25 +67,28 @@ class StatementsGenerator(
 
         val computeStatement = "repository.$methodName·($paramsAsString)"
 
-        val convertStatement = if (returnType.className == targetType.className) {
+        val isTargetType = returnType.className == targetType.className
+        val hasTargetTypeAsArgument = returnType.hasArgument(targetType)
+        val isSupportedType = supportedTypes.contains(returnType.className) && hasTargetTypeAsArgument
+
+        val convertStatement = if (isTargetType) {
             //ReturnType is targetType
-            "$converterName.$convertToDTO"
-        } else if (returnType.hasArgument(targetType) && returnType.className == LIST) {
-            //ReturnType is List with targetType as param
-            "$converterName.$convertToDTOs"
-        } else if (returnType.hasArgument(targetType) && returnType.className == STREAM.topLevelClassName())
-            "$converterName.$convertToDTOStream"
-        else {
-            ""
+            "$converterName.$convertToDTO·(result)"
+        } else {
+            if (isSupportedType) {
+                "result.map·($converterName::$convertToDTO)"
+            } else {
+                "result"
+            }
         }
 
 
         if (returnType.className != UNIT) {
             statements.add("val result = $computeStatement")
             if (returnTypeIsNullable) {
-                statements.add("return·if(result != null)·$convertStatement·(result) else null")
+                statements.add("return·if(result != null)·$convertStatement·else·null")
             } else {
-                statements.add("return·$convertStatement·(result)")
+                statements.add("return·$convertStatement·")
             }
         } else {
             statements.add(computeStatement)

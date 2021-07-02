@@ -17,7 +17,8 @@ import kotlinx.metadata.KmClassifier
 @KotlinPoetMetadataPreview
 class PanacheMethodEntityGenerator(
     private val function: ImmutableKmFunction,
-    private val targetType: CKType
+    private val targetType: CKType,
+    private val idType: CKType
 ) : IGenerator<MethodEntity?> {
 
     override fun generate(): MethodEntity? {
@@ -56,7 +57,7 @@ class PanacheMethodEntityGenerator(
 
             val targetParameterType = if (parameter.type!!.classifier is KmClassifier.TypeParameter) {
                 if (parameterName == "id") {
-                    LONG.toType()
+                    idType.copy(isNullable = false)
                 } else {
                     if (parameterType.isNullable) targetType.copy(isNullable = true)
                     else targetType

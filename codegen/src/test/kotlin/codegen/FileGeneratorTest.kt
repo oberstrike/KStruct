@@ -11,10 +11,12 @@ import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.net.URLClassLoader
+
 
 
 class FileGeneratorTest {
@@ -47,8 +49,9 @@ class FileGeneratorTest {
             import kotlin.collections.List
             import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
             import com.maju.annotations.ComponentModel
+            import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
 
-            data class Person(val name: String)
+            data class Person(val name: String, override var id: Long? = null): PanacheEntity()
             
             data class PersonDTO(val name: String) 
             

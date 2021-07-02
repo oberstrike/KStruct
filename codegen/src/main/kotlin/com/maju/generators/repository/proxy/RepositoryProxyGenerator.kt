@@ -7,8 +7,6 @@ import com.maju.generators.repository.IGenerator
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.maju.utils.*
-import com.squareup.kotlinpoet.metadata.toImmutableKmClass
-import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepositoryBase
 
 class RepositoryProxyGenerator(
     private val packageName: String,
@@ -32,20 +30,10 @@ class RepositoryProxyGenerator(
 
         for (methodEntity in repositoryEntity.methods) {
             for (converterEntity in repositoryEntity.converters) {
-                val converterTargetType = converterEntity.targetType
-
-                val methodParameters = methodEntity.parameters.map { it.type }
-                val methodReturnType = methodEntity.returnType
-                val isReturnTypeConverterTargetType = methodReturnType.className == converterTargetType.className
-                val isReturnTypeListOfConverterTargetType =
-                    methodReturnType.className == LIST && methodReturnType.hasArgument(converterTargetType)
-
-                if (methodParameters.contains(converterTargetType) || isReturnTypeConverterTargetType || isReturnTypeListOfConverterTargetType) {
-                    val functionGenerator = FunctionSpecGenerator(methodEntity, converterEntity)
-                    repositoryProxyTypeSpecBuilder.addFunction(
-                        functionGenerator.generate()
-                    )
-                }
+                val functionGenerator = FunctionSpecGenerator(methodEntity, converterEntity)
+                repositoryProxyTypeSpecBuilder.addFunction(
+                    functionGenerator.generate()
+                )
             }
         }
 

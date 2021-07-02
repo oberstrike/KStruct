@@ -15,7 +15,13 @@ data class RepositoryEntity(
 
 
 data class PanacheEntity(
-    val type: CKType
+    val type: CKType,
+    val idType: CKType
+)
+
+data class JPAEntity(
+    val type: CKType,
+    val idType: CKType
 )
 
 data class ConverterEntity(
