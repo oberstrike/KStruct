@@ -36,7 +36,6 @@ class RepositoryProxyGenerator(
             repositoryProxyTypeSpecBuilder.addFunction(
                 functionGenerator.generate()
             )
-
         }
 
         return FileSpec.get(packageName, repositoryProxyTypeSpecBuilder.build())
