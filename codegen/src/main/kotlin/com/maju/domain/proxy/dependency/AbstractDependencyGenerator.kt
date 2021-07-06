@@ -7,9 +7,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.PropertySpec
 
 abstract class AbstractDependencyGenerator(
-    protected val repositoryClassName: ClassName,
-    protected val converterClassNames: List<ClassName>,
-    protected val componentModel: ComponentModel
+
 ) : IDependencyGenerator {
 
 

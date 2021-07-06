@@ -7,15 +7,11 @@ import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import java.util.*
 
 @KotlinPoetMetadataPreview
-class DefaultIDependencyGenerator(
-    repositoryClassName: ClassName,
-    converterClassNames: List<ClassName>,
-    componentModel: ComponentModel
-) : AbstractDependencyGenerator(
-    repositoryClassName,
-    converterClassNames,
-    componentModel
-) {
+class DefaultDependencyGenerator() : AbstractDependencyGenerator() {
+
+    private lateinit var repositoryClassName: ClassName
+    private lateinit var converterClassNames: List<ClassName>
+    private lateinit var componentModel: ComponentModel
 
 
     private val repositoryVarName = "repository"
@@ -42,7 +38,7 @@ class DefaultIDependencyGenerator(
     private fun getProperties(): List<PropertySpec> {
         return converterClassNames.map { converterClassName ->
             val name = converterClassName.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
-            property(name, converterClassName){
+            property(name, converterClassName) {
                 mutable(false)
                 initializer(name)
             }
@@ -66,7 +62,15 @@ class DefaultIDependencyGenerator(
         }
     }
 
-    override fun getDependency(): Dependency {
+    override fun getDependency(
+        repositoryClassName: ClassName,
+        converterClassNames: List<ClassName>,
+        componentModel: ComponentModel
+    ): Dependency {
+        this.repositoryClassName = repositoryClassName
+        this.converterClassNames = converterClassNames
+        this.componentModel = componentModel
+
         return Dependency(
             getConstructor(),
             getProperties().plus(getRepositoryProperty()),

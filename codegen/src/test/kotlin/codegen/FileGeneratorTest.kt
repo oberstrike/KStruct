@@ -162,7 +162,7 @@ class FileGeneratorTest {
             null
         )
         val container = generatedPanacheProxyContainerData.declarationContainer
-        Assertions.assertEquals(22, container.functions.size)
+        Assertions.assertEquals(26, container.functions.size)
     }
 
 

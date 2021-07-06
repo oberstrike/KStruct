@@ -11,17 +11,12 @@ import javax.inject.Inject
 
 
 @KotlinPoetMetadataPreview
-class PropertyDependencyGenerator(
-    repositoryClassName: ClassName,
-    converterClassNames: List<ClassName>,
-    componentModel: ComponentModel
-) : AbstractDependencyGenerator(
-    repositoryClassName,
-    converterClassNames,
-    componentModel
-) {
+class PropertyDependencyGenerator() : AbstractDependencyGenerator() {
 
-    private val componentModelIsCDI = componentModel == ComponentModel.CDI
+    private lateinit var repositoryClassName: ClassName
+    private lateinit var converterClassNames: List<ClassName>
+    private lateinit var componentModel: ComponentModel
+    private var componentModelIsCDI = false
 
     private fun getProperties(): List<PropertySpec> {
         return converterClassNames.map { converterClassName ->
@@ -50,7 +45,15 @@ class PropertyDependencyGenerator(
     }
 
 
-    override fun getDependency(): Dependency {
+    override fun getDependency(
+        repositoryClassName: ClassName,
+        converterClassNames: List<ClassName>,
+        componentModel: ComponentModel
+    ): Dependency {
+        this.repositoryClassName = repositoryClassName
+        this.converterClassNames = converterClassNames
+        this.componentModel = componentModel
+        this.componentModelIsCDI = componentModel == ComponentModel.CDI
         return Dependency(
             constructor = null,
             getProperties().plus(getRepositoryProperty()),

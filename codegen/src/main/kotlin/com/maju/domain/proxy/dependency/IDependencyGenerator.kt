@@ -5,7 +5,11 @@ import com.squareup.kotlinpoet.*
 
 interface IDependencyGenerator {
 
-    fun getDependency(): Dependency
+    fun getDependency(
+        repositoryClassName: ClassName,
+        converterClassNames: List<ClassName>,
+        componentModel: ComponentModel
+    ): Dependency
 }
 
 
