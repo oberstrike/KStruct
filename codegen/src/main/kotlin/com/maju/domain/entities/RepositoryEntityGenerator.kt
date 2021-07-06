@@ -4,7 +4,7 @@ import com.maju.domain.generator.ConverterEntity
 import com.maju.domain.generator.MethodEntity
 import com.maju.domain.generator.ExtensionEntity
 import com.maju.domain.generator.RepositoryEntity
-import com.maju.domain.repository.IGenerator
+import com.maju.utils.IGenerator
 import com.maju.utils.CKType
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 

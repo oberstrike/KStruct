@@ -1,9 +1,9 @@
-package com.maju.domain.repository.proxy.statement
+package com.maju.domain.proxy.statement
 
 import com.maju.domain.generator.ConverterEntity
 import com.maju.domain.generator.MethodEntity
 import com.maju.domain.generator.ParameterEntity
-import com.maju.domain.repository.IGenerator
+import com.maju.utils.IGenerator
 import com.maju.utils.CKType
 import com.maju.utils.Constants.createStatementGeneratorByType
 

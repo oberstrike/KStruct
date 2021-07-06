@@ -1,9 +1,11 @@
-package com.maju.domain.repository.proxy
+package com.maju.domain.proxy
 
 
 import com.maju.cli.*
 import com.maju.domain.generator.RepositoryEntity
-import com.maju.domain.repository.IGenerator
+import com.maju.domain.proxy.dependency.DefaultIDependencyGenerator
+import com.maju.domain.proxy.dependency.PropertyDependencyGenerator
+import com.maju.utils.IGenerator
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 
@@ -19,13 +21,35 @@ class RepositoryProxyGenerator(
 
 
         val (repositoryClassName, repositoryProxyTypeSpecBuilder) = generateRepositoryProxyTypeSpec()
+        val converterClassNames = repositoryEntity.converters.map { it.type.className }
 
-        injectionStrategy.dependencyGenerator.applyDependency(
-            typeSpecBuilder = repositoryProxyTypeSpecBuilder,
-            repositoryClassName = repositoryClassName,
-            converterClassNames = repositoryEntity.converters.map { it.type.className },
-            componentModel = componentModel
-        )
+        val dependencyGeneratorClass = when (injectionStrategy) {
+            InjectionStrategy.DEFAULT -> DefaultIDependencyGenerator::class.java
+            InjectionStrategy.CONSTRUCTOR -> DefaultIDependencyGenerator::class.java
+            InjectionStrategy.PROPERTY -> PropertyDependencyGenerator::class.java
+            else -> DefaultIDependencyGenerator::class.java
+        }
+
+        val dependencyGenerator = dependencyGeneratorClass
+            .getConstructor(ClassName::class.java, List::class.java, ComponentModel::class.java)
+            .newInstance(repositoryClassName, converterClassNames, componentModel)
+
+
+        val dependency = dependencyGenerator.getDependency()
+
+        if (dependency.constructor != null) {
+            repositoryProxyTypeSpecBuilder.primaryConstructor(dependency.constructor)
+        }
+
+        for (property in dependency.properties) {
+            repositoryProxyTypeSpecBuilder.addProperty(property)
+        }
+
+        for (annotation in dependency.annotations) {
+            repositoryProxyTypeSpecBuilder.addAnnotation(annotation)
+        }
+
+
 
         for (methodEntity in repositoryEntity.methods) {
             val functionGenerator = FunctionSpecGenerator(methodEntity, repositoryEntity.converters)
