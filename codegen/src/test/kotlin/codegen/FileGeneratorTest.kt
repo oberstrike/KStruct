@@ -41,12 +41,12 @@ class FileGeneratorTest {
             """
             package $packageName
                 
-            import com.maju.annotations.IConverter
-            import com.maju.annotations.RepositoryProxy
-            import com.maju.annotations.InjectionStrategy
+            import com.maju.cli.IConverter
+            import com.maju.cli.RepositoryProxy
+            import com.maju.cli.InjectionStrategy
             import kotlin.collections.List
             import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
-            import com.maju.annotations.ComponentModel
+            import com.maju.cli.ComponentModel
             import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
 
             data class Person(val name: String, override var id: Long? = null): PanacheEntity()
@@ -162,7 +162,7 @@ class FileGeneratorTest {
             null
         )
         val container = generatedPanacheProxyContainerData.declarationContainer
-        Assertions.assertEquals(22, container.functions.size)
+        Assertions.assertEquals(26, container.functions.size)
     }
 
 

@@ -1,4 +1,4 @@
-package com.maju.domain.repository.proxy.statement
+package com.maju.domain.proxy.statement
 
 import com.maju.utils.CKType
 import com.maju.utils.PANACHE_QUERY

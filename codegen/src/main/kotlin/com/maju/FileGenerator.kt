@@ -5,7 +5,7 @@ import com.maju.domain.generator.MethodEntity
 import com.maju.domain.entities.ConverterEntityGenerator
 import com.maju.domain.entities.MethodEntityGenerator
 import com.maju.domain.entities.RepositoryEntityGenerator
-import com.maju.domain.repository.proxy.RepositoryProxyGenerator
+import com.maju.domain.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
 import com.maju.cli.IConverter
 import com.maju.domain.generator.ConverterEntity

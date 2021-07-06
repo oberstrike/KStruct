@@ -17,6 +17,7 @@ dependencies {
     val quarkusVersion = "1.13.7.Final"
 
     implementation(kotlin("stdlib"))
+    implementation(project(":cli"))
 
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
