@@ -1,14 +1,15 @@
-package codegen
+package codegen.unit
 
 
-import com.maju.annotations.IConverter
-import com.maju.annotations.RepositoryProxy
+import com.maju.cli.IConverter
+import com.maju.cli.RepositoryProxy
 import com.maju.entities.*
 import com.maju.generators.repository.proxy.RepositoryProxyGenerator
 import com.maju.utils.parameterizedToType
 import com.maju.utils.toType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheQuery
 import org.junit.jupiter.api.Test
 
 data class Person(val name: String)
@@ -50,11 +51,56 @@ class CustomConverter: IConverter<Custom, CustomDTO>{
 }
 
 @KotlinPoetMetadataPreview
-class RepositoryTest {
+class RepositoryProxyTest {
 
 
     @Test
-    fun generatedTest() {
+    fun `Panache query`(){
+        val originType = Person::class.toType()
+        val targetType = PersonDTO::class.toType()
+        val panacheType = PanacheQuery::class.toType(targetType)
+
+        val personConverterType = PersonConverter::class.toType()
+
+        val personConverter = ConverterEntity(
+            personConverterType,
+            originType,
+            targetType,
+            originToTargetFunctionName = "convertModelToDTO",
+            targetToOriginFunctionName = "convertDTOToModel"
+        )
+        val personRepositoryType = PersonRepository::class.toType()
+
+
+        val testParameter = ParameterEntity(
+            name = "test",
+            type = STRING.toType()
+        )
+        val findByNameMethod = MethodEntity(
+            "findByName",
+            listOf(testParameter),
+            panacheType,
+            false
+        )
+
+        val repositoryProxyEntity = RepositoryEntity(
+            type = personRepositoryType,
+            methods = listOf(findByNameMethod),
+            converters = listOf(personConverter),
+            name = "PersonRepositoryProxy"
+        )
+
+        val repositoryProxyGenerator = RepositoryProxyGenerator("com.test", repositoryProxyEntity)
+
+
+        val fileSpec = repositoryProxyGenerator.generate()
+        println(fileSpec)
+
+    }
+
+
+    @Test
+    fun `test whether it works`() {
         val originType = Person::class.toType()
         val targetType = PersonDTO::class.toType()
 
@@ -120,8 +166,20 @@ class RepositoryTest {
             isSuspend = false
         )
 
-        val personConverter = ConverterEntity(personConverterType, originType, targetType)
-        val customConverter = ConverterEntity(customConverterType, Custom::class.toType(), CustomDTO::class.toType())
+        val personConverter = ConverterEntity(
+            personConverterType,
+            originType,
+            targetType,
+            originToTargetFunctionName = "convertModelToDTO",
+            targetToOriginFunctionName = "convertDTOToModel"
+        )
+        val customConverter = ConverterEntity(
+            customConverterType,
+            Custom::class.toType(),
+            CustomDTO::class.toType(),
+            originToTargetFunctionName = "convertModelToDTO",
+            targetToOriginFunctionName = "convertDTOToModel"
+        )
 
 
 

@@ -1,4 +1,4 @@
-package com.maju.annotations
+package com.maju.cli
 
 import com.maju.generators.repository.proxy.dependency.DefaultDependencyGenerator
 import com.maju.generators.repository.proxy.dependency.DependencyGenerator

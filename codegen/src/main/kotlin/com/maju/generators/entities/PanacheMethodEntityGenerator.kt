@@ -4,10 +4,8 @@ import com.maju.entities.MethodEntity
 import com.maju.entities.ParameterEntity
 import com.maju.generators.repository.IGenerator
 import com.maju.utils.CKType
-import com.maju.utils.STREAM
+import com.maju.utils.Constants
 import com.maju.utils.toType
-import com.squareup.kotlinpoet.LIST
-import com.squareup.kotlinpoet.LONG
 import com.squareup.kotlinpoet.metadata.ImmutableKmFunction
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.isNullable
@@ -47,8 +45,8 @@ class PanacheMethodEntityGenerator(
         }
 
         if (targetReturnType.arguments.isNotEmpty()
-            && targetReturnType.className != STREAM
-            && targetReturnType.className != LIST
+            && !Constants.collectionTypes.contains(targetReturnType.className)
+            && !Constants.panacheTypes.contains(targetReturnType.className)
         ) return null
 
         for (parameter in parameters) {

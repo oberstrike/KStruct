@@ -1,12 +1,11 @@
 package com.maju.generators.repository.proxy
 
 
-import com.maju.annotations.*
+import com.maju.cli.*
 import com.maju.entities.*
 import com.maju.generators.repository.IGenerator
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
-import com.maju.utils.*
 
 class RepositoryProxyGenerator(
     private val packageName: String,

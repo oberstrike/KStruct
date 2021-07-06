@@ -5,93 +5,83 @@ import com.maju.entities.MethodEntity
 import com.maju.entities.ParameterEntity
 import com.maju.generators.repository.IGenerator
 import com.maju.utils.CKType
-import com.maju.utils.STREAM
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.ITERABLE
-import com.squareup.kotlinpoet.LIST
+import com.maju.utils.Constants.createStatementGeneratorByType
 
 class StatementsGenerator(
     private val methodEntity: MethodEntity,
     private val converterEntities: List<ConverterEntity>
 ) : IGenerator<List<String>> {
 
-    private val supportedTypes: List<ClassName> = listOf(LIST, STREAM.topLevelClassName(), ITERABLE.topLevelClassName())
-    private val convertToModel = "convertDTOToModel"
-    private val convertToDTO = "convertModelToDTO"
+    private val statements = mutableListOf<String>()
+
+    private val resultVariableName = "result"
+
 
     override fun generate(): List<String> {
         val returnType = methodEntity.returnType
-        val params = methodEntity.parameters
-        val methodName = methodEntity.name
-        val statements = mutableListOf<String>()
-        val isNullable = methodEntity.returnType.isNullable
 
+        val allParams = methodEntity.parameters.joinToString(",·") { param -> analyseParam(param) }
 
-        val allParams = params.map { analyseParam(it, statements) }
-        val paramsAsString = allParams.joinToString(",·")
-        val computeStatement = "val result = repository.·$methodName·(·$paramsAsString·)"
-        statements.add(computeStatement)
-        if(isNullable){
-            statements.add("if(result·==·null)·return·null ")
+        var resultStatement = "val $resultVariableName = repository.·${methodEntity.name}·(·$allParams·)"
+
+        if (returnType.isNullable) {
+            resultStatement += "?: return null"
         }
 
-        val returnStatement = analyseReturnType(returnType)
-        statements.add(returnStatement)
+        statements.add(resultStatement)
+        statements.add(analyseReturnType(returnType))
         return statements
     }
 
-    private fun analyseParam(param: ParameterEntity, statements: MutableList<String>): String {
-        var paramName = param.name
-        val paramType = param.type
-        val isSupportedType = supportedTypes.contains(paramType.className)
-        val targetConverterEntity = converterEntities.find { converter -> converter.targetType.className == paramType.className }
-
-        if (isSupportedType) {
-            val argument = paramType.arguments.firstOrNull()
-            if (argument != null) {
-                val converterEntity = converterEntities.find { converter ->
-                    converter.targetType.className == argument.className
-                }
-                if (converterEntity != null) {
-                    val converterName = converterEntity.getName()
-                    paramName = "${param.name}Model"
-                    val statement = "val $paramName = ${param.name}.map(·$converterName::$convertToModel) "
-                    statements.add(statement)
-                }
-            }
-        }else if(targetConverterEntity != null) {
-            val converterName = targetConverterEntity.getName()
-            paramName = "${param.name}Model"
-            val statement = "val $paramName =·$converterName.$convertToModel(${param.name})"
-            statements.add(statement)
+    private fun getConverterByTargetType(target: CKType): ConverterEntity? {
+        val arguments = target.arguments
+        if (arguments.isNotEmpty()) {
+            return getConverterByTargetType(arguments.first())
         }
 
-        return paramName
+        return converterEntities.find { converter ->
+            converter.targetType.className == target.className
+        }
+
+    }
+
+    private fun analyseParam(param: ParameterEntity): String {
+        val paramType = param.type
+        val converterEntity = getConverterByTargetType(paramType)
+
+        var targetName = param.name
+        val originName = param.name
+
+        val targetType = converterEntity?.targetType ?: return targetName
+
+        targetName = "${param.name}Model"
+        val converterName = converterEntity.getName()
+
+        val generator: StatementGenerator = createStatementGeneratorByType(
+            paramType,
+            targetType,
+            converterName,
+            converterEntity.targetToOriginFunctionName
+        )
+
+        statements.add("val $targetName = ${generator.createStatement(originName)}")
+
+        return targetName
     }
 
     private fun analyseReturnType(returnType: CKType): String {
-        var returnStatement = "return result"
-        val isSupportedType = supportedTypes.contains(returnType.className)
-        val targetConverterEntity = converterEntities.find { converter -> converter.targetType.className == returnType.className }
+        val converterEntity = getConverterByTargetType(returnType)
+        val targetName = "result"
+        val targetType = converterEntity?.targetType ?: return "return $targetName"
 
-        if(isSupportedType){
-            val argument = returnType.arguments.firstOrNull()
-            if (argument != null) {
-                val converterEntity = converterEntities.find { converter ->
-                    converter.targetType.className == argument.className
-                }
-                if (converterEntity != null) {
-                    val converterName = converterEntity.getName()
-                    return "return result.map($converterName::$convertToDTO)"
-                }
-            }
-        }else if(targetConverterEntity != null){
-            val converterName = targetConverterEntity.getName()
-            return "return $converterName.$convertToDTO(result)"
+        val generator: StatementGenerator = createStatementGeneratorByType(
+            returnType,
+            targetType,
+            converterEntity.getName(),
+            converterEntity.originToTargetFunctionName
+        )
 
-        }
-
-        return returnStatement
+        return "return ${generator.createStatement(targetName)}"
     }
 
 }

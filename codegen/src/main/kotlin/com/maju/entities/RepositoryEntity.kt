@@ -11,16 +11,11 @@ data class RepositoryEntity(
     val type: CKType,
     val converters: List<ConverterEntity>,
     val methods: List<MethodEntity>,
-    val panacheEntity: PanacheEntity? = null
+    val panacheEntity: ExtensionEntity? = null
 )
 
 
-data class PanacheEntity(
-    val type: CKType,
-    val idType: CKType
-)
-
-data class JPAEntity(
+data class ExtensionEntity(
     val type: CKType,
     val idType: CKType
 )
@@ -28,7 +23,9 @@ data class JPAEntity(
 data class ConverterEntity(
     val type: CKType,
     val originType: CKType,
-    val targetType: CKType
+    val targetType: CKType,
+    val originToTargetFunctionName: String,
+    val targetToOriginFunctionName: String
 ) {
 
     fun getName() = type.className.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }

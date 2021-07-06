@@ -1,6 +1,7 @@
 package com.maju.utils
 
 import com.squareup.kotlinpoet.ClassName
+import io.quarkus.hibernate.orm.panache.kotlin.PanacheQuery
 
 fun ClassName.toType(): CKType {
     return CKType(
@@ -27,4 +28,7 @@ fun ClassName.parameterizedToType(className: ClassName): CKType {
 
 @JvmField
 val STREAM = ClassName("java.util.stream", "Stream")
+
+@JvmField
+val PANACHE_QUERY = ClassName("io.quarkus.hibernate.orm.panache.kotlin", "PanacheQuery")
 

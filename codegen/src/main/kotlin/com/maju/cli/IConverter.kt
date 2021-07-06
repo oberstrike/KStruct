@@ -1,4 +1,4 @@
-package com.maju.annotations
+package com.maju.cli
 
 
 

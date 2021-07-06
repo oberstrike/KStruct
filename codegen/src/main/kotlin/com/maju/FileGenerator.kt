@@ -1,16 +1,15 @@
 package com.maju
 
-import com.maju.annotations.RepositoryProxy
+import com.maju.cli.RepositoryProxy
 import com.maju.entities.MethodEntity
 import com.maju.generators.entities.ConverterEntityGenerator
 import com.maju.generators.entities.MethodEntityGenerator
 import com.maju.generators.entities.RepositoryEntityGenerator
 import com.maju.generators.repository.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
-import com.maju.annotations.IConverter
+import com.maju.cli.IConverter
 import com.maju.entities.ConverterEntity
-import com.maju.entities.JPAEntity
-import com.maju.entities.PanacheEntity
+import com.maju.entities.ExtensionEntity
 import com.maju.generators.entities.ParameterEntityGenerator
 import com.maju.generators.entities.PanacheMethodEntityGenerator
 import com.squareup.kotlinpoet.FileSpec
@@ -79,19 +78,19 @@ class FileGenerator : AbstractProcessor() {
             var isPanacheRepository = null != panacheKmType
             printNote("PanacheRepository: $isPanacheRepository")
 
-            var panacheEntity: PanacheEntity? = null
-            var jpaEntity: JPAEntity? = null
+            var panacheEntity: ExtensionEntity? = null
+            var jpaEntity: ExtensionEntity? = null
 
             if (isPanacheRepository) {
                 printNote("The class $repositoryName inherits the repository: ${PanacheRepository::class.qualifiedName}")
                 val entityType = panacheKmType!!.arguments.first().type!!.toType()
                 val entityContainer = elementClassInspector.declarationContainerFor(entityType.className)
                 val idProperty = entityContainer.properties.firstOrNull { it.name == "id" }
-                if(idProperty == null){
+                if (idProperty == null) {
                     printWarning("The panache entity: $repositoryName has no id, so no panache methods will be generated.")
-                }else{
+                } else {
                     val idType = idProperty.returnType.toType()
-                    panacheEntity = PanacheEntity(entityType, idType)
+                    panacheEntity = ExtensionEntity(entityType, idType)
                     isPanacheRepository = false
                 }
             }
@@ -106,7 +105,7 @@ class FileGenerator : AbstractProcessor() {
                 printNote("The class $repositoryName inherits ${JpaRepository::class.qualifiedName}")
                 val entityType = jpaRepositoryKmType!!.arguments.first().type!!.toType()
                 val idType = jpaRepositoryKmType.arguments[1].type!!.toType()
-                jpaEntity = JPAEntity(entityType, idType)
+                jpaEntity = ExtensionEntity(entityType, idType)
             }
 
 
@@ -121,23 +120,29 @@ class FileGenerator : AbstractProcessor() {
 
             //Get the converter of the Repository
             val converterTypeMirrors = repositoryElement.getAnnotationClassValues<RepositoryProxy> { converters }
-            val converterType = IConverter::class.toType()
+            val converterCKType = IConverter::class.toType()
 
             val converterEntities = converterTypeMirrors.asSequence()
                 .map(processingEnv.typeUtils::asElement)
                 .map { it as TypeElement }
-                .filter { it.isSubType(converterType) }
+                .filter { it.isSubType(converterCKType) }
                 .map {
                     it.toImmutableKmClass().supertypes
                         .map { supertype -> supertype.toType() }
-                        .findLast { supertype -> supertype.className == converterType.className } to it
+                        .findLast { supertype -> supertype.className == converterCKType.className } to it
                 }.map {
                     ConverterEntityGenerator(
-                        it.second.toType(),
-                        it.first!!.arguments[0],
-                        it.first!!.arguments[1]
+                        type = it.second.toType(),
+                        originType = it.first!!.arguments[0],
+                        targetType = it.first!!.arguments[1],
+                        originToTargetFunctionName = "convertModelToDTO",
+                        targetToOriginFunctionName = "convertDTOToModel"
+
                     ).generate()
                 }.toList()
+
+
+
             printNote("There were ${converterEntities.size} converters found")
 
             val methodEntities = mutableListOf<MethodEntity>()
@@ -192,14 +197,15 @@ class FileGenerator : AbstractProcessor() {
                 }
             }
 
-            if(jpaEntity != null){
+            if (jpaEntity != null) {
                 printNote("Generating the jpa functions")
                 val converterEntity = converterEntities.firstOrNull() ?: throw Exception("")
                 val jpaRepositoryKmClass = com.maju.jpa.JpaRepository::class.toImmutableKmClass()
                 val crudRepositoryKmClass = com.maju.jpa.CrudRepository::class.toImmutableKmClass()
                 val pagingAndSortingRepositoryKmClass = com.maju.jpa.CrudRepository::class.toImmutableKmClass()
 
-                val functions = jpaRepositoryKmClass.functions.concat(crudRepositoryKmClass.functions).concat(pagingAndSortingRepositoryKmClass.functions)!!
+                val functions = jpaRepositoryKmClass.functions.concat(crudRepositoryKmClass.functions)
+                    .concat(pagingAndSortingRepositoryKmClass.functions)!!
                 val converterTargetType = converterEntity.targetType
 
                 val idType = jpaEntity.idType

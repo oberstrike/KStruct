@@ -1,6 +1,6 @@
 package com.maju.generators.repository.proxy.dependency
 
-import com.maju.annotations.ComponentModel
+import com.maju.cli.ComponentModel
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec

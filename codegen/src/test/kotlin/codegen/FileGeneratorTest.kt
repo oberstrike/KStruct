@@ -2,8 +2,7 @@ package codegen
 
 
 import com.maju.FileGenerator
-import com.maju.annotations.ComponentModel
-import com.squareup.kotlinpoet.DelicateKotlinPoetApi
+import com.maju.cli.ComponentModel
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
@@ -11,7 +10,6 @@ import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -96,13 +94,6 @@ class FileGeneratorTest {
                     return PersonDTO(model.name)
                 }
                 
-                    override fun convertDTOsToModels(dtos: List<PersonDTO>): List<Person> {
-                        TODO("Not yet implemented")
-                    }
-
-                    override fun convertModelsToDTOs(models: List<Person>): List<PersonDTO> {
-                        TODO("Not yet implemented")
-                    }
                 
             }
         """.trimIndent()
@@ -135,7 +126,7 @@ class FileGeneratorTest {
         )
         val container = generatedProxyContainerData.declarationContainer
         val functions = container.functions
-        Assertions.assertEquals(4, functions.size)
+        Assertions.assertEquals(6, functions.size)
         val functionNames = functions.map { it.name }
         Assertions.assertTrue(functionNames.contains(superDeleteMethodName))
         Assertions.assertTrue(functionNames.contains(findByNameMethodName))
@@ -171,7 +162,7 @@ class FileGeneratorTest {
             null
         )
         val container = generatedPanacheProxyContainerData.declarationContainer
-        Assertions.assertEquals(10, container.functions.size)
+        Assertions.assertEquals(22, container.functions.size)
     }
 
 
