@@ -1,7 +1,7 @@
-package com.maju.generators.entities
+package com.maju.domain.entities
 
-import com.maju.entities.ConverterEntity
-import com.maju.generators.repository.IGenerator
+import com.maju.domain.generator.ConverterEntity
+import com.maju.domain.repository.IGenerator
 import com.maju.utils.CKType
 
 class ConverterEntityGenerator(

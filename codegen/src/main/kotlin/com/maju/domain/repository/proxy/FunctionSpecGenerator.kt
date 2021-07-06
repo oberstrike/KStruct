@@ -1,9 +1,9 @@
-package com.maju.generators.repository.proxy
+package com.maju.domain.repository.proxy
 
-import com.maju.entities.ConverterEntity
-import com.maju.entities.MethodEntity
-import com.maju.generators.repository.IGenerator
-import com.maju.generators.repository.proxy.statement.StatementsGenerator
+import com.maju.domain.generator.ConverterEntity
+import com.maju.domain.generator.MethodEntity
+import com.maju.domain.repository.IGenerator
+import com.maju.domain.repository.proxy.statement.StatementsGenerator
 import com.maju.utils.toParameterizedTypeName
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier

@@ -1,24 +1,9 @@
-package com.maju.entities
+package com.maju.domain.generator
 
 import com.maju.utils.CKType
 import com.maju.utils.parameterizedToType
 import com.squareup.kotlinpoet.LIST
 import java.util.*
-
-
-data class RepositoryEntity(
-    val name: String,
-    val type: CKType,
-    val converters: List<ConverterEntity>,
-    val methods: List<MethodEntity>,
-    val panacheEntity: ExtensionEntity? = null
-)
-
-
-data class ExtensionEntity(
-    val type: CKType,
-    val idType: CKType
-)
 
 data class ConverterEntity(
     val type: CKType,
@@ -53,16 +38,3 @@ data class ConverterEntity(
     }
 
 }
-
-
-data class MethodEntity(
-    val name: String,
-    val parameters: List<ParameterEntity>,
-    val returnType: CKType,
-    val isSuspend: Boolean
-)
-
-data class ParameterEntity(
-    val name: String,
-    val type: CKType
-)

@@ -3,8 +3,11 @@ package codegen.unit
 
 import com.maju.cli.IConverter
 import com.maju.cli.RepositoryProxy
-import com.maju.entities.*
-import com.maju.generators.repository.proxy.RepositoryProxyGenerator
+import com.maju.domain.generator.ConverterEntity
+import com.maju.domain.generator.MethodEntity
+import com.maju.domain.generator.ParameterEntity
+import com.maju.domain.generator.RepositoryEntity
+import com.maju.domain.repository.proxy.RepositoryProxyGenerator
 import com.maju.utils.parameterizedToType
 import com.maju.utils.toType
 import com.squareup.kotlinpoet.*

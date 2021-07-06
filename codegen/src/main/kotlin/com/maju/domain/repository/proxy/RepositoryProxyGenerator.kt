@@ -1,9 +1,9 @@
-package com.maju.generators.repository.proxy
+package com.maju.domain.repository.proxy
 
 
 import com.maju.cli.*
-import com.maju.entities.*
-import com.maju.generators.repository.IGenerator
+import com.maju.domain.generator.RepositoryEntity
+import com.maju.domain.repository.IGenerator
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 

@@ -1,17 +1,17 @@
 package com.maju
 
 import com.maju.cli.RepositoryProxy
-import com.maju.entities.MethodEntity
-import com.maju.generators.entities.ConverterEntityGenerator
-import com.maju.generators.entities.MethodEntityGenerator
-import com.maju.generators.entities.RepositoryEntityGenerator
-import com.maju.generators.repository.proxy.RepositoryProxyGenerator
+import com.maju.domain.generator.MethodEntity
+import com.maju.domain.entities.ConverterEntityGenerator
+import com.maju.domain.entities.MethodEntityGenerator
+import com.maju.domain.entities.RepositoryEntityGenerator
+import com.maju.domain.repository.proxy.RepositoryProxyGenerator
 import com.google.auto.service.AutoService
 import com.maju.cli.IConverter
-import com.maju.entities.ConverterEntity
-import com.maju.entities.ExtensionEntity
-import com.maju.generators.entities.ParameterEntityGenerator
-import com.maju.generators.entities.PanacheMethodEntityGenerator
+import com.maju.domain.generator.ConverterEntity
+import com.maju.domain.generator.ExtensionEntity
+import com.maju.domain.entities.ParameterEntityGenerator
+import com.maju.domain.entities.PanacheMethodEntityGenerator
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.classinspector.elements.ElementsClassInspector
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector

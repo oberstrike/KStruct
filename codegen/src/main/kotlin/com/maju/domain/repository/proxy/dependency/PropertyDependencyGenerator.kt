@@ -1,4 +1,4 @@
-package com.maju.generators.repository.proxy.dependency
+package com.maju.domain.repository.proxy.dependency
 
 import com.maju.cli.ComponentModel
 import com.squareup.kotlinpoet.ClassName

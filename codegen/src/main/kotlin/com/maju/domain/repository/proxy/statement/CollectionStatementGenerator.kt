@@ -1,4 +1,4 @@
-package com.maju.generators.repository.proxy.statement
+package com.maju.domain.repository.proxy.statement
 
 
 import com.maju.utils.STREAM

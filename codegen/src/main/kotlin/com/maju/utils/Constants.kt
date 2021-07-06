@@ -1,9 +1,9 @@
 package com.maju.utils
 
-import com.maju.generators.repository.proxy.statement.CollectionStatementGenerator
-import com.maju.generators.repository.proxy.statement.PanacheStatementGenerator
-import com.maju.generators.repository.proxy.statement.SimpleStatementGenerator
-import com.maju.generators.repository.proxy.statement.StatementGenerator
+import com.maju.domain.repository.proxy.statement.CollectionStatementGenerator
+import com.maju.domain.repository.proxy.statement.PanacheStatementGenerator
+import com.maju.domain.repository.proxy.statement.SimpleStatementGenerator
+import com.maju.domain.repository.proxy.statement.StatementGenerator
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ITERABLE
 import com.squareup.kotlinpoet.LIST

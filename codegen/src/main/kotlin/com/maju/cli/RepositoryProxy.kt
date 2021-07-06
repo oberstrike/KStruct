@@ -1,8 +1,8 @@
 package com.maju.cli
 
-import com.maju.generators.repository.proxy.dependency.DefaultDependencyGenerator
-import com.maju.generators.repository.proxy.dependency.DependencyGenerator
-import com.maju.generators.repository.proxy.dependency.PropertyDependencyGenerator
+import com.maju.domain.repository.proxy.dependency.DefaultDependencyGenerator
+import com.maju.domain.repository.proxy.dependency.DependencyGenerator
+import com.maju.domain.repository.proxy.dependency.PropertyDependencyGenerator
 import kotlin.reflect.KClass
 
 

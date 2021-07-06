@@ -1,8 +1,8 @@
-package com.maju.generators.entities
+package com.maju.domain.entities
 
-import com.maju.entities.MethodEntity
-import com.maju.entities.ParameterEntity
-import com.maju.generators.repository.IGenerator
+import com.maju.domain.generator.MethodEntity
+import com.maju.domain.generator.ParameterEntity
+import com.maju.domain.repository.IGenerator
 import com.maju.utils.CKType
 import com.maju.utils.Constants
 import com.maju.utils.toType

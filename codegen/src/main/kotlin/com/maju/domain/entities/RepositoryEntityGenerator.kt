@@ -1,10 +1,10 @@
-package com.maju.generators.entities
+package com.maju.domain.entities
 
-import com.maju.entities.ConverterEntity
-import com.maju.entities.MethodEntity
-import com.maju.entities.ExtensionEntity
-import com.maju.entities.RepositoryEntity
-import com.maju.generators.repository.IGenerator
+import com.maju.domain.generator.ConverterEntity
+import com.maju.domain.generator.MethodEntity
+import com.maju.domain.generator.ExtensionEntity
+import com.maju.domain.generator.RepositoryEntity
+import com.maju.domain.repository.IGenerator
 import com.maju.utils.CKType
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 
