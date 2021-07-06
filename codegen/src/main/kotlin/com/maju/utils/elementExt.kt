@@ -14,7 +14,6 @@ inline fun <reified T : Annotation> Element.getAnnotationClassValue(f: T.() -> K
 }
 
 inline fun <reified T : Annotation> Element.getAnnotationClassValues(f: T.() -> Array<KClass<*>>): List<TypeMirror> {
-    println("test2")
     try {
         getAnnotation(T::class.java).f()
         throw Exception("Expected to get a MirroredTypeException")

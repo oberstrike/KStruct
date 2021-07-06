@@ -17,7 +17,10 @@ fun <T : Any> KClass<T>.toType(): CKType {
 }
 
 
-
+@KotlinPoetMetadataPreview
+fun <T : Any> KClass<T>.toType(type: CKType): CKType {
+    return ClassInspectorUtil.createClassName(toImmutableKmClass().name).toType().copy(arguments = listOf(type))
+}
 
 @KotlinPoetMetadataPreview
 fun ImmutableKmType.className(): ClassName {

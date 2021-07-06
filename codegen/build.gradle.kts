@@ -12,27 +12,35 @@ plugins {
 
 
 dependencies {
+    val kotlinpoetVersion = "1.9.0"
+    val kotlinVersion = "1.5.10"
+    val quarkusVersion = "1.13.7.Final"
+
     implementation(kotlin("stdlib"))
 
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("com.google.auto.service:auto-service:1.0-rc4")
-    kapt("com.google.auto.service:auto-service:1.0-rc7")
+
+    implementation("com.google.auto.service:auto-service:1.0")
+    kapt("com.google.auto.service:auto-service:1.0")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.4.30")
+    //testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
 
     //Panache for quarkus
-    implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin-deployment:1.12.1.Final")
+    implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin-deployment:$quarkusVersion")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.2.0")
-    val kotlinpoetVersion = "1.8.0"
+    implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.3.0")
+    implementation("org.springframework.data:spring-data-jpa:2.5.2")
+    
     implementation("com.squareup:kotlinpoet:$kotlinpoetVersion")
     implementation("com.squareup:kotlinpoet-metadata:$kotlinpoetVersion")
     implementation("com.squareup:kotlinpoet-metadata-specs:$kotlinpoetVersion")
     implementation("com.squareup:kotlinpoet-classinspector-elements:$kotlinpoetVersion")
     implementation("com.squareup:kotlinpoet-classinspector-reflective:$kotlinpoetVersion")
+
     implementation("com.github.tschuchortdev:kotlin-compile-testing:1.3.6")
     implementation("javax.enterprise:cdi-api:2.0.SP1")
 

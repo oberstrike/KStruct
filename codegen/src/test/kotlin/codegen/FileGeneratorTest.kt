@@ -2,19 +2,19 @@ package codegen
 
 
 import com.maju.FileGenerator
+import com.maju.cli.ComponentModel
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.classinspector.reflective.ReflectiveClassInspector
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
-import com.squareup.kotlinpoet.metadata.specs.ContainerData
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import org.junit.Assert
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.net.URLClassLoader
+
 
 
 class FileGeneratorTest {
@@ -23,13 +23,14 @@ class FileGeneratorTest {
     @ParameterizedTest
     @ValueSource(strings = ["PROPERTY", "CONSTRUCTOR", "DEFAULT"])
     fun generateRepositoryProxyTest(strategy: String) {
+        ComponentModel.CDI
         val clazzName = """SchemaTest2"""
         val converterName = "PersonConverter"
         val packageName = """com.test"""
         val findByNameMethodName = """findByName"""
         val superDeleteMethodName = """delete"""
         val isDeletedMethodName = """isDeleted"""
-        val componentModel = """cdi"""
+        val componentModel = """ComponentModel.CDI"""
         val injectionStrategy = """InjectionStrategy.$strategy"""
         val saveMethodName = """save"""
         val getAllMethodName = """getAll"""
@@ -45,8 +46,10 @@ class FileGeneratorTest {
             import com.maju.annotations.InjectionStrategy
             import kotlin.collections.List
             import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
+            import com.maju.annotations.ComponentModel
+            import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntity
 
-            data class Person(val name: String)
+            data class Person(val name: String, override var id: Long? = null): PanacheEntity()
             
             data class PersonDTO(val name: String) 
             
@@ -61,7 +64,7 @@ class FileGeneratorTest {
             interface TestRepository: SuperRepository
             
             @RepositoryProxy(converters = [$converterName::class],
-              componentModel = "$componentModel",
+              componentModel = $componentModel,
               injectionStrategy = $injectionStrategy
               )
             interface $clazzName: TestRepository{
@@ -74,7 +77,7 @@ class FileGeneratorTest {
             }
             
             @RepositoryProxy(converters = [$converterName::class],
-             componentModel = "$componentModel",
+             componentModel = $componentModel,
              injectionStrategy = $injectionStrategy
             )
             interface $panacheTestRepositoryName: PanacheRepository<Person> {
@@ -91,13 +94,6 @@ class FileGeneratorTest {
                     return PersonDTO(model.name)
                 }
                 
-                    override fun convertDTOsToModels(dtos: List<PersonDTO>): List<Person> {
-                        TODO("Not yet implemented")
-                    }
-
-                    override fun convertModelsToDTOs(models: List<Person>): List<PersonDTO> {
-                        TODO("Not yet implemented")
-                    }
                 
             }
         """.trimIndent()
@@ -115,14 +111,6 @@ class FileGeneratorTest {
         val sourcesGeneratedByAnnotationProcessor = compilationResult.sourcesGeneratedByAnnotationProcessor
         val sourcesGeneratedNames = sourcesGeneratedByAnnotationProcessor.map { it.name }
 
-        /*
-        sourcesGeneratedByAnnotationProcessor.forEach {
-            val code = it.readText()
-            println(code)
-        }
-        */
-
-
         //Check first proxy
         val generatedProxyClazzName = "${clazzName}Proxy"
         assert(sourcesGeneratedNames.contains("$generatedProxyClazzName.kt"))
@@ -138,7 +126,7 @@ class FileGeneratorTest {
         )
         val container = generatedProxyContainerData.declarationContainer
         val functions = container.functions
-        Assertions.assertEquals(4, functions.size)
+        Assertions.assertEquals(6, functions.size)
         val functionNames = functions.map { it.name }
         Assertions.assertTrue(functionNames.contains(superDeleteMethodName))
         Assertions.assertTrue(functionNames.contains(findByNameMethodName))
