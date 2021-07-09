@@ -5,20 +5,15 @@ import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 
 @KotlinPoetMetadataPreview
 object DependencyGeneratorFactory {
+
+    private val generators: List<IDependencyGenerator> = listOf(
+        DefaultDependencyGenerator(), PropertyDependencyGenerator()
+    )
+
+
     fun aDependencyGenerator(injectionStrategy: InjectionStrategy): IDependencyGenerator {
-        return when (injectionStrategy) {
-            InjectionStrategy.PROPERTY -> property()
-            else -> default()
-        }
+        return generators.first { it.injectionStrategies.contains(injectionStrategy) }
     }
 
-
-    private fun default(): DefaultDependencyGenerator {
-        return DefaultDependencyGenerator()
-    }
-
-    private fun property(): PropertyDependencyGenerator {
-        return PropertyDependencyGenerator()
-    }
 
 }

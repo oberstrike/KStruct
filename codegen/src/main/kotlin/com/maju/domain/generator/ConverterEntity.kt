@@ -1,6 +1,7 @@
 package com.maju.domain.generator
 
 import com.maju.utils.CKType
+import com.maju.utils.firstCharToLower
 import com.maju.utils.parameterizedToType
 import com.squareup.kotlinpoet.LIST
 import java.util.*
@@ -13,7 +14,7 @@ data class ConverterEntity(
     val targetToOriginFunctionName: String
 ) {
 
-    fun getName() = type.className.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
+    fun getName() = type.className.simpleName.firstCharToLower()
 
     fun convert(type: CKType): CKType? {
         val listOfModelType = LIST.parameterizedToType(originType)

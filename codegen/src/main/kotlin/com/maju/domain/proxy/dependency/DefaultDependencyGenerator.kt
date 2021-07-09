@@ -1,10 +1,11 @@
 package com.maju.domain.proxy.dependency
 
 import com.maju.cli.ComponentModel
+import com.maju.cli.InjectionStrategy
+import com.maju.utils.APPLICATION_SCOPED
+import com.maju.utils.firstCharToLower
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
-import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
-import java.util.*
 
 @KotlinPoetMetadataPreview
 class DefaultDependencyGenerator() : AbstractDependencyGenerator() {
@@ -13,8 +14,9 @@ class DefaultDependencyGenerator() : AbstractDependencyGenerator() {
     private lateinit var converterClassNames: List<ClassName>
     private lateinit var componentModel: ComponentModel
 
+    override val injectionStrategies: List<InjectionStrategy>
+        get() = listOf(InjectionStrategy.CONSTRUCTOR, InjectionStrategy.DEFAULT)
 
-    private val repositoryVarName = "repository"
 
     private fun getConstructor(): FunSpec {
         return FunSpec.constructorBuilder()
@@ -22,7 +24,7 @@ class DefaultDependencyGenerator() : AbstractDependencyGenerator() {
                 for (converterClassName in converterClassNames) {
                     addParameter(
                         ParameterSpec.builder(
-                            converterClassName.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) },
+                            converterClassName.simpleName.firstCharToLower(),
                             converterClassName
                         )
                             .build()
@@ -37,7 +39,7 @@ class DefaultDependencyGenerator() : AbstractDependencyGenerator() {
 
     private fun getProperties(): List<PropertySpec> {
         return converterClassNames.map { converterClassName ->
-            val name = converterClassName.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
+            val name = converterClassName.simpleName.firstCharToLower()
             property(name, converterClassName) {
                 mutable(false)
                 initializer(name)
@@ -57,7 +59,7 @@ class DefaultDependencyGenerator() : AbstractDependencyGenerator() {
     private fun getAnnotations(): List<AnnotationSpec> {
         return annotations {
             if (componentModel == ComponentModel.CDI) {
-                add(ClassInspectorUtil.createClassName("javax/enterprise/context/ApplicationScoped"))
+                add(APPLICATION_SCOPED)
             }
         }
     }
