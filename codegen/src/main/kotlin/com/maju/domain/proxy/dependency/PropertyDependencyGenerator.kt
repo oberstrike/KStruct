@@ -1,12 +1,12 @@
 package com.maju.domain.proxy.dependency
 
 import com.maju.cli.ComponentModel
+import com.maju.cli.InjectionStrategy
+import com.maju.utils.APPLICATION_SCOPED
+import com.maju.utils.firstCharToLower
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
-import com.squareup.kotlinpoet.metadata.specs.internal.ClassInspectorUtil
 import org.springframework.beans.factory.annotation.Autowired
-import java.util.*
-import javax.enterprise.context.ApplicationScoped
 import javax.inject.Inject
 
 
@@ -16,31 +16,38 @@ class PropertyDependencyGenerator() : AbstractDependencyGenerator() {
     private lateinit var repositoryClassName: ClassName
     private lateinit var converterClassNames: List<ClassName>
     private lateinit var componentModel: ComponentModel
+
     private var componentModelIsCDI = false
+    private var componentModelIsSpring = false
+
+    override val injectionStrategies: List<InjectionStrategy>
+        get() = listOf(InjectionStrategy.PROPERTY)
 
     private fun getProperties(): List<PropertySpec> {
         return converterClassNames.map { converterClassName ->
-            val name = converterClassName.simpleName.replaceFirstChar { it.lowercase(Locale.getDefault()) }
-            property(name, converterClassName){
+            val name = converterClassName.simpleName.firstCharToLower()
+            property(name, converterClassName) {
                 addModifiers(KModifier.LATEINIT)
                 if (componentModelIsCDI) addAnnotation(Inject::class)
+                if (componentModelIsSpring) addAnnotation(Autowired::class)
                 mutable(true)
             }
         }
     }
 
     private fun getRepositoryProperty(): PropertySpec {
-        return property("repository", repositoryClassName) {
+        return property(repositoryVarName, repositoryClassName) {
             addModifiers(KModifier.PRIVATE, KModifier.LATEINIT)
             if (componentModelIsCDI) addAnnotation(Inject::class)
+            if (componentModelIsSpring) addAnnotation(Autowired::class)
             mutable(true)
         }
     }
 
 
-    private fun getAnnotations(): List<AnnotationSpec>{
+    private fun getAnnotations(): List<AnnotationSpec> {
         return annotations {
-            add(ClassInspectorUtil.createClassName("javax/enterprise/context/ApplicationScoped"))
+            add(APPLICATION_SCOPED)
         }
     }
 
@@ -54,13 +61,14 @@ class PropertyDependencyGenerator() : AbstractDependencyGenerator() {
         this.converterClassNames = converterClassNames
         this.componentModel = componentModel
         this.componentModelIsCDI = componentModel == ComponentModel.CDI
+        this.componentModelIsSpring = componentModel == ComponentModel.SPRING_CDI
+
         return Dependency(
             constructor = null,
             getProperties().plus(getRepositoryProperty()),
             getAnnotations()
         )
     }
-
 
 
 }
